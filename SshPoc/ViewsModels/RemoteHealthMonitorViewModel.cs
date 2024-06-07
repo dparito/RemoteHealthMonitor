@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace SshPoc
 {
-    public class MainWindowViewModel
+    public class RemoteHealthMonitorViewModel
     {
+        public RemoteHealthMonitorViewModel() 
+        {
+            
+        }
     }
 }
