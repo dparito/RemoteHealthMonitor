@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,19 +11,13 @@ namespace SshPoc
     {
         #region Private Members
 
-        private SessionModel _session;
+        private SessionModel? _session;
         #endregion // Private Members
 
         #region Constructors
 
         public LatencyMonitorViewModel()
         {
-            
-        }
-
-        public LatencyMonitorViewModel(SessionModel session) 
-        {
-            _session = session;
         }
 
         #endregion // Constructors
