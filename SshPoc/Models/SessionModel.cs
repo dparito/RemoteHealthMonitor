@@ -78,7 +78,7 @@ namespace SshPoc
         #region Public Methods
         
         /// <summary>
-        /// Method to establish SSH connection with a remote client
+        /// Establishes SSH connection with a remote client
         /// </summary>
         public void ConnectSsh()
         {
@@ -96,7 +96,7 @@ namespace SshPoc
         }
 
         /// <summary>
-        /// Method to disconnect SSH connection
+        /// Disconnects SSH connection
         /// </summary>
         public void DisconnectSsh()
         {
@@ -107,14 +107,14 @@ namespace SshPoc
         }
 
         /// <summary>
-        /// Method to get SSH connection status
+        /// Gets SSH connection status
         /// </summary>
         /// <returns>True if SSH connection to remote client valid</returns>
         public bool GetConnectionStatus() => SshClient != null && SshClient.IsConnected;
 
 
         /// <summary>
-        /// Method to run a terminal command on remote client over SSH
+        /// Runs a terminal command on remote client over SSH
         /// </summary>
         /// <param name="cmd">user specified command</param>
         /// <returns>results of command execution as returned by the remote client</returns>

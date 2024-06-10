@@ -33,6 +33,7 @@ namespace SshPoc
         private bool _isLastErrorCleared;
         
         private bool _isRecording;
+        private bool _keepReading;
         private ShellStream? _shellStream;
         private StreamReader? _reader;
         private StreamWriter? _writer;
@@ -61,9 +62,9 @@ namespace SshPoc
             _userCmdInput = "sudo ./asapp -T";
             _cmdResponse = string.Empty;
             
-            _currentErrorStatus = _isLastErrorCleared = _isRecording = _connStatus = false;
+            _currentErrorStatus = _isLastErrorCleared = _connStatus = false;
             _minVal = _maxVal = _thresholdVal = string.Empty;
-            _isRecording = false;
+            _isRecording = _keepReading = false;
             
             RunStopToggleCmd = new RelayCommand(RunStopToggleState);
             ConnectCommand = new RelayCommand(ConnectButtonPress);
@@ -250,7 +251,7 @@ namespace SshPoc
         #region Private Methods
 
         /// <summary>
-        /// Method to apply user preferences
+        /// Applies user preferences
         /// </summary>
         private void ApplyButtonPress()
         {
@@ -260,7 +261,7 @@ namespace SshPoc
         }
 
         /// <summary>
-        /// Method to connect/disconnect with a remote client over SSH
+        /// Connects/disconnects with a remote client over SSH
         /// </summary>
         private void ConnectButtonPress()
         {
@@ -319,7 +320,7 @@ namespace SshPoc
         }
 
         /// <summary>
-        /// Method to run/stop running a command on remote terminal 
+        /// Run/stop running a command on remote terminal 
         /// </summary>
         private async void RunStopToggleState()
         {
@@ -364,6 +365,10 @@ namespace SshPoc
             }
         }
 
+        /// <summary>
+        /// Creates and starts a thread to write user command to remote SSH terminal
+        /// </summary>
+        /// <param name="cmd">user command as string</param>
         private void StartRecording(string cmd)
         {
             try
@@ -374,6 +379,7 @@ namespace SshPoc
                 ThreadStart threadStart = ReceiveData;
                 Thread thread = new Thread(threadStart) { IsBackground = true };
                 thread.Start();
+                _keepReading = true;
             }
             catch (Exception e)
             {
@@ -386,17 +392,26 @@ namespace SshPoc
             }
         }
 
+        /// <summary>
+        /// Closes thread that writes to remote SSH terminal
+        /// </summary>
         private void StopRecording() 
         {
             _shellStream.Flush();
             _writer.Flush();
             _reader.DiscardBufferedData();
+            StreamedResult.Clear();
 
             _reader.BaseStream.Close();
 
             _isRecording = false;
+            _keepReading = false;
         }
 
+        /// <summary>
+        /// Starts writing user command to remote SSH terminal
+        /// </summary>
+        /// <param name="cmd">user command as string</param>
         private void WriteStream(string cmd)
         {
             _writer.WriteLine(cmd);
@@ -406,17 +421,24 @@ namespace SshPoc
             }
         }
 
+        /// <summary>
+        /// Contains thread to received and parse data from remote SSH terminal
+        /// </summary>
         private void ReceiveData()
         {
-            while (true)
+            StreamedResult = new StringBuilder();
+
+            // keep receiving data until stream active, every 200 ms
+            while (_keepReading)
             {
                 try
                 {
+                    // if reader object valid 
                     if (_reader != null)
                     {
-                        StreamedResult = new StringBuilder();
-
                         string line;
+
+                        // while remote SSH terminal responds with a non-null string
                         while ((line = _reader.ReadLine()) != null)
                         {
                             CmdResponse += "\n" + line;
@@ -424,6 +446,7 @@ namespace SshPoc
                             Debug.WriteLine(CmdResponse);
                         }
 
+                        // Process data received from remote SSH terminal in this session
                         if (!string.IsNullOrEmpty(StreamedResult.ToString()))
                         {
                             // TODO - Parse data at this point
@@ -434,13 +457,16 @@ namespace SshPoc
                 catch (Exception e)
                 {
                     // TODO
-                    Debug.WriteLine(e);
+                    Debug.WriteLine(e.Message);
                 }
 
                 Thread.Sleep(200);
             }
         }
 
+        /// <summary>
+        /// Creates instances of shell stream, stream reader and writer
+        /// </summary>
         private void CreateShellStream()
         {
             _shellStream = Session?.SshClient.CreateShellStream(terminalName: "Terminal",
@@ -456,8 +482,15 @@ namespace SshPoc
 
         #region INotifyPropertyChanged Implementation
 
+        /// <summary>
+        /// Event to trigger change of property value
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        /// <summary>
+        /// Event handler for PropertyChanged
+        /// </summary>
+        /// <param name="propertyName">Name of the changed property</param>
         protected virtual void OnPropertyChanged(string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
