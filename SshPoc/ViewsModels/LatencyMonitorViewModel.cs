@@ -595,7 +595,8 @@ namespace SshPoc
 
         private void ClearLastErrorButtonPress()
         {
-            IsLastErrorCleared = true;
+            if (CurrentErrorStatus)
+                IsLastErrorCleared = true;
         }
 
         private void RunThis(object? cmd)
