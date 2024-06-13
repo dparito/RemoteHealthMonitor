@@ -9,7 +9,7 @@ using Renci.SshNet;
 
 namespace SshPoc
 {
-    public class SessionModel
+    public class SessionModel : IDisposable
     {
         #region Member Variables
 
@@ -17,6 +17,7 @@ namespace SshPoc
         private string _username = String.Empty;
         private string _password = String.Empty;
         private string _ipAddress = String.Empty;
+        private bool _disposedValue;
 
         #endregion // Memeber Variables
 
@@ -118,8 +119,49 @@ namespace SshPoc
         /// </summary>
         /// <param name="cmd">user specified command</param>
         /// <returns>results of command execution as returned by the remote client</returns>
-        public string RunCommand(string cmd) => SshClient.RunCommand(cmd).Result;
-        
+        public string RunCommand(string cmd)
+        {
+            string response;
+            try
+            {
+                response = SshClient.RunCommand(cmd).Result;
+            }
+            catch
+            {
+                throw new Exception();
+            }
+            return response;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                _disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~SessionModel()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
 
         #endregion // Public Methods
 

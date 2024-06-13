@@ -7,15 +7,10 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="LatencyMonitor.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="ConnectWindow.xaml">
+    <Page Update="LatencyMonitor.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="LatencyMonitor.xaml">
+    <Page Update="ConnectWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

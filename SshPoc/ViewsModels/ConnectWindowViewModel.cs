@@ -59,7 +59,7 @@ namespace SshPoc
             _connectButtonContent = "Connect";
             _toggleButtonContent = "Run";
             
-            _userCmdInput = "sudo ./asapp -T";
+            _userCmdInput = "echo Allspark | sudo -S ./asapp -T";
             _cmdResponse = string.Empty;
             
             _currentErrorStatus = _isLastErrorCleared = _connStatus = false;
