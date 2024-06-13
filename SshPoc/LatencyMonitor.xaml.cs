@@ -21,8 +21,8 @@ namespace SshPoc
         {
             InitializeComponent();
 
-            //LatencyMonitorViewModel vm = new LatencyMonitorViewModel();
-            //_myPolyline.Points = vm.Points;
+            LatencyMonitorViewModel vm = new LatencyMonitorViewModel();
+            _myPolyline.Points = vm.Points;
 
             //double[] x = new double[200];
             //for (int i = 0; i < x.Length; i++)

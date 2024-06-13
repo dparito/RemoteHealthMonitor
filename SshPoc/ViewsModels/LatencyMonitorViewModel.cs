@@ -40,13 +40,13 @@ namespace SshPoc
         private double _threshold;
         private double _temp;
 
-        //private Random _random;
-        //private double _currentSecond;
-        //private double[] _seconds;
-        //private double[] _temps;
-        //DispatcherTimer _timer;
-        //private PointCollection _points;
-        //private bool _isPlottable;
+        private Random _random;
+        private double _currentSecond;
+        private double[] _seconds;
+        private double[] _temps;
+        DispatcherTimer _timer;
+        private PointCollection _points;
+        private bool _isPlottable;
 
 
         #endregion // Private Members
@@ -75,24 +75,24 @@ namespace SshPoc
             RunStopInjectorContent = "Run Temperature Test"; 
             RunStopAnalyzerContent = "Run Counter Analyzer";
 
-            _threshold = 42.9375;
+            _threshold = 43.3125;
 
-            //_random = new Random();
-            //_currentSecond = 0;
-            //Temperature = 0.0;
-            //Points = new PointCollection();
-            //_seconds = [];
-            //_temps = [];
-            //_isPlottable = false;
-            //MyModel = new MyModel()
-            //{
-            //    Points = Points,
-            //    ColorName = "black",
-            //};
-            //_timer = new DispatcherTimer();
-            //_timer.Tick += Timer_Tick;
-            //_timer.Interval = TimeSpan.FromMilliseconds(500);
-            //_timer.Start();
+            _random = new Random();
+            _currentSecond = 0;
+            Temperature = 0.0;
+            Points = new PointCollection();
+            _seconds = [];
+            _temps = [];
+            _isPlottable = false;
+            MyModel = new MyModel()
+            {
+                Points = Points,
+                ColorName = "black",
+            };
+            _timer = new DispatcherTimer();
+            _timer.Tick += Timer_Tick;
+            _timer.Interval = TimeSpan.FromMilliseconds(500);
+            _timer.Start();
 
             ConnectSshCommand = new RelayCommand(ConnectSshButtonPress);
             ConnectSerialCommand = new RelayCommand(ConnectSerialButtonPress);
@@ -309,15 +309,15 @@ namespace SshPoc
             }
         }
 
-        //public PointCollection Points 
-        //{ 
-        //    get => _points; 
-        //    set
-        //    {
-        //        _points = value;
-        //        OnPropertyChanged(nameof(Points));
-        //    }
-        //}
+        public PointCollection Points
+        {
+            get => _points;
+            set
+            {
+                _points = value;
+                OnPropertyChanged(nameof(Points));
+            }
+        }
 
         public double Temperature 
         { 
@@ -329,17 +329,17 @@ namespace SshPoc
             }
         }
 
-        //public bool IsPlottable
-        //{
-        //    get => _isPlottable;
-        //    set
-        //    {
-        //        _isPlottable = value;
-        //        OnPropertyChanged(nameof(IsPlottable));
-        //    }
-        //}
+        public bool IsPlottable
+        {
+            get => _isPlottable;
+            set
+            {
+                _isPlottable = value;
+                OnPropertyChanged(nameof(IsPlottable));
+            }
+        }
 
-        //public MyModel MyModel { get; set; }
+        public MyModel MyModel { get; set; }
 
         public ICommand ConnectSshCommand { get; private set; }
 
@@ -735,15 +735,15 @@ namespace SshPoc
 
         #endregion // SSH Communication
 
-        //private void Timer_Tick()
-        //{
-        //    _currentSecond++;
-        //    double x = _currentSecond * 10;
-        //    double y = _random.Next(1, 200);
-        //    //if (_keepReading)
-        //    //    Points.Add(new Point(x, _temp));
-        //    Points.Add(new Point(x, y));
-        //}
+        private void Timer_Tick(object? sender, EventArgs e)
+        {
+            _currentSecond++;
+            double x = _currentSecond * 10;
+            double y = _random.Next(1, 200);
+            //if (_keepReading)
+            //    Points.Add(new Point(x, _temp));
+            Points.Add(new Point(x, y));
+        }
 
         #endregion // Private Methods
 
@@ -766,10 +766,10 @@ namespace SshPoc
         #endregion // INotifyPropertyChanged Implementation
     }
 
-    //public class MyModel
-    //{
-    //    public PointCollection Points { get; set; } = new PointCollection();
+    public class MyModel
+    {
+        public PointCollection Points { get; set; } = new PointCollection();
 
-    //    public string ColorName { get; set; }
-    //}
+        public string ColorName { get; set; }
+    }
 }

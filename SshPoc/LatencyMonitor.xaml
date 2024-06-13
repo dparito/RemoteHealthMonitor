@@ -6,7 +6,7 @@
         xmlns:d3="clr-namespace:InteractiveDataDisplay.WPF;assembly=InteractiveDataDisplay.WPF"
         xmlns:local="clr-namespace:SshPoc" 
         mc:Ignorable="d"
-        Title="Remote Health Monitor" Height="450" Width="725">
+        Title="Remote Health Monitor" Height="600" Width="725">
     <Window.DataContext>
         <local:LatencyMonitorViewModel />
     </Window.DataContext>
@@ -120,8 +120,8 @@
             </Grid.ColumnDefinitions>
 
             <!--TITLE-->
-            <Label Name="lblTitleStatusLatency" Grid.Column="2" Content="Status Monitor"
-                   Foreground="#FF9E18" FontFamily="Avenir" FontSize="22" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="7,0,0,0" />
+            <Label Name="lblTitleStatusLatency" Grid.Column="1" Content="Status Monitor"
+                   Foreground="#FF9E18" FontFamily="Avenir" FontSize="22" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="132,0,0,0" Grid.ColumnSpan="2" />
 
             <!--CONNECTIVITY STATUS INDICATOR-->
             <Ellipse Name="connStatusGpuLatency" Grid.Row="1" Grid.Column="0" Width="25" Height="24" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0" >
@@ -226,6 +226,8 @@
                         <Label Name="lblTemp" Grid.Row="0" Content="Temperature (C): " VerticalContentAlignment="Top" HorizontalContentAlignment="Left" Margin="10,0,0,0" />
                         <TextBox Name="txtTemp" Grid.Row="0" Text="{Binding Temperature, UpdateSourceTrigger=PropertyChanged}" 
                                  Width="150" Height="25" VerticalAlignment="Top" HorizontalAlignment="Left" TextAlignment="Left" Margin="120,0,0,0" />
+                        <Polyline Name="_myPolyline" Grid.Row="1" Stroke="blue" Points="{Binding Points}" 
+          Height="200" Tag="123213" StrokeThickness="4" Margin="0,0,0,0" />
                         <!--<Button Name="btnPlot" Grid.Row="0" Content="Plot" Command="{Binding PlotCommand}" IsEnabled="{Binding IsPlottable}"
                                 Background="#FFCF8E" Width="120" Height="25" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,10,0"/>
                         <Polyline Name="_myPolyline" Grid.Row="1" Stroke="blue" Points="{Binding Points}" 
