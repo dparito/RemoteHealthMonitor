@@ -7,27 +7,10 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="GpuStress.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="LatencyMonitor.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="RemoteHealthMonitor.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="ConnectWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="GpuStress.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Update="LatencyMonitor.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="RemoteHealthMonitor.xaml">
+    <Page Update="ConnectWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

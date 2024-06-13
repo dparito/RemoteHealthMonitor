@@ -23,17 +23,22 @@ namespace SshPoc
         private string _password;
         private string _hostIpAddr;
         private string _connectButtonContent;
+
+        private string _userCmdInput;
         private string _toggleButtonContent;
         private string _cmdResponse;
+        
         private bool _connStatus;
         private bool _currentErrorStatus;
         private bool _isLastErrorCleared;
-        private string _userCmdInput;
+        
         private bool _isRecording;
+        private bool _keepReading;
         private ShellStream? _shellStream;
-        private StreamReader _reader;
-        private StreamWriter _writer;
-        private StringBuilder _streamedResult;
+        private StreamReader? _reader;
+        private StreamWriter? _writer;
+        private StringBuilder? _streamedResult;
+        
         private string _minVal;
         private string _maxVal;
         private string _thresholdVal;
@@ -42,6 +47,9 @@ namespace SshPoc
 
         #region Constructor
 
+        /// <summary>
+        /// Default Constructor
+        /// </summary>
         public ConnectWindowViewModel() 
         {
             _username = "allspark"; 
@@ -51,11 +59,12 @@ namespace SshPoc
             _connectButtonContent = "Connect";
             _toggleButtonContent = "Run";
             
-            _userCmdInput = "sudo ./asapp -T";
+            _userCmdInput = "echo Allspark | sudo -S ./asapp -T";
             _cmdResponse = string.Empty;
             
-            _connStatus = false;
-            _currentErrorStatus = _isLastErrorCleared = _isRecording = _connStatus;
+            _currentErrorStatus = _isLastErrorCleared = _connStatus = false;
+            _minVal = _maxVal = _thresholdVal = string.Empty;
+            _isRecording = _keepReading = false;
             
             RunStopToggleCmd = new RelayCommand(RunStopToggleState);
             ConnectCommand = new RelayCommand(ConnectButtonPress);
@@ -66,7 +75,10 @@ namespace SshPoc
 
         #region Public Properties
         
-        public SessionModel Session { get; private set; }
+        /// <summary>
+        /// Object of SessionModel class
+        /// </summary>
+        public SessionModel? Session { get; private set; }
 
         public string Username 
         { 
@@ -192,18 +204,6 @@ namespace SshPoc
             }
         }
 
-        public StringBuilder StreamedResult
-        {
-            get => _streamedResult;
-            set => _streamedResult = value;
-        }
-
-        public ICommand RunStopToggleCmd { get; private set; }
-
-        public ICommand ConnectCommand { get; private set; }
-
-        public ICommand ApplyCommand { get; private set; }
-        
         public string MinVal
         {
             get => _minVal;
@@ -213,7 +213,7 @@ namespace SshPoc
                 OnPropertyChanged(nameof(MinVal));
             }
         }
-        
+
         public string MaxVal
         {
             get => _maxVal;
@@ -234,10 +234,25 @@ namespace SshPoc
             }
         }
 
+        public StringBuilder StreamedResult
+        {
+            get => _streamedResult;
+            set => _streamedResult = value;
+        }
+
+        public ICommand RunStopToggleCmd { get; private set; }
+
+        public ICommand ConnectCommand { get; private set; }
+
+        public ICommand ApplyCommand { get; private set; }
+        
         #endregion // Public Properties
 
         #region Private Methods
 
+        /// <summary>
+        /// Applies user preferences
+        /// </summary>
         private void ApplyButtonPress()
         {
             Debug.WriteLine($"Min: {MinVal}" +
@@ -245,29 +260,40 @@ namespace SshPoc
                 $"\nThreshold: {ThresholdVal}");
         }
 
+        /// <summary>
+        /// Connects/disconnects with a remote client over SSH
+        /// </summary>
         private void ConnectButtonPress()
         {
+            // To establish a connection
             if (ConnectButtonContent == "Connect")
             {
-                ConnectButtonContent = "Disconnect";
-
                 if (Session == null)
                 {
                     Session = new SessionModel(HostIpAddress, Username, Password);
 
+                    // if a valid SSH connection already exists
                     if (!Session.GetConnectionStatus())
+                    {
+                        // if remote client credentialsa are invalid
                         if (Session.IpAddress != null || Session.Username != null)
                         {
                             try
                             {
                                 Session.ConnectSsh();
+
+                                // if connection established
                                 if (Session.GetConnectionStatus())
                                 {
+
                                     var testStr = Session.RunCommand("ls -l");
                                     Debug.WriteLine(testStr);
 
+                                    // Changes button label 
+                                    ConnectButtonContent = "Disconnect";
                                     ConnStatus = true;
 
+                                    // Instantiate shell stream, stream reader and writer for first connection
                                     if (_shellStream == null && _reader == null && _writer == null)
                                         CreateShellStream();
                                 }
@@ -276,37 +302,46 @@ namespace SshPoc
                             {
                                 Debug.WriteLine(ex.Message);
                             }
-                            // TODO: Close this window
                         }
                         else
                             Debug.WriteLine("Invalid Credentials");
+                    }
                     else
                         Debug.WriteLine("Session already connected!");
                 }
             }
+            // To disconnect from a remote client
             else
             {
+                Session?.DisconnectSsh();
                 ConnectButtonContent = "Connect";
-                Session.DisconnectSsh();
                 ConnStatus = false;
-            }
-            
+            }       
         }
 
+        /// <summary>
+        /// Run/stop running a command on remote terminal 
+        /// </summary>
         private async void RunStopToggleState()
         {
+            // To run a command
             if (ToggleButtonContent == "Run")
             {
+                // Changes button label
                 ToggleButtonContent = "Stop";
 
+                // if a valid SSH connection exists
                 if (Session != null && Session.GetConnectionStatus())
                 {
+                    // reopen the shell stream if already closed
                     if (!_shellStream.CanWrite)
                         CreateShellStream();
 
+                    // changes status indicators
                     CurrentErrorStatus = true;
                     IsLastErrorCleared = true;
 
+                    // start writing to remote terminal if a valid user command entered
                     if (UserCmdInput != string.Empty)
                     {
                         _isRecording = true;
@@ -322,14 +357,18 @@ namespace SshPoc
                         CmdResponse = "User command input empty!";
                 }
             }
+            // To stop running a command
             else
             {
                 StopRecording();
                 ToggleButtonContent = "Run";
             }
-
         }
 
+        /// <summary>
+        /// Creates and starts a thread to write user command to remote SSH terminal
+        /// </summary>
+        /// <param name="cmd">user command as string</param>
         private void StartRecording(string cmd)
         {
             try
@@ -340,6 +379,7 @@ namespace SshPoc
                 ThreadStart threadStart = ReceiveData;
                 Thread thread = new Thread(threadStart) { IsBackground = true };
                 thread.Start();
+                _keepReading = true;
             }
             catch (Exception e)
             {
@@ -352,17 +392,26 @@ namespace SshPoc
             }
         }
 
+        /// <summary>
+        /// Closes thread that writes to remote SSH terminal
+        /// </summary>
         private void StopRecording() 
         {
             _shellStream.Flush();
             _writer.Flush();
             _reader.DiscardBufferedData();
+            StreamedResult.Clear();
 
             _reader.BaseStream.Close();
 
             _isRecording = false;
+            _keepReading = false;
         }
 
+        /// <summary>
+        /// Starts writing user command to remote SSH terminal
+        /// </summary>
+        /// <param name="cmd">user command as string</param>
         private void WriteStream(string cmd)
         {
             _writer.WriteLine(cmd);
@@ -372,17 +421,24 @@ namespace SshPoc
             }
         }
 
+        /// <summary>
+        /// Contains thread to received and parse data from remote SSH terminal
+        /// </summary>
         private void ReceiveData()
         {
-            while (true)
+            StreamedResult = new StringBuilder();
+
+            // keep receiving data until stream active, every 200 ms
+            while (_keepReading)
             {
                 try
                 {
+                    // if reader object valid 
                     if (_reader != null)
                     {
-                        StreamedResult = new StringBuilder();
-
                         string line;
+
+                        // while remote SSH terminal responds with a non-null string
                         while ((line = _reader.ReadLine()) != null)
                         {
                             CmdResponse += "\n" + line;
@@ -390,6 +446,7 @@ namespace SshPoc
                             Debug.WriteLine(CmdResponse);
                         }
 
+                        // Process data received from remote SSH terminal in this session
                         if (!string.IsNullOrEmpty(StreamedResult.ToString()))
                         {
                             // TODO - Parse data at this point
@@ -400,16 +457,19 @@ namespace SshPoc
                 catch (Exception e)
                 {
                     // TODO
-                    Debug.WriteLine(e);
+                    Debug.WriteLine(e.Message);
                 }
 
                 Thread.Sleep(200);
             }
         }
 
+        /// <summary>
+        /// Creates instances of shell stream, stream reader and writer
+        /// </summary>
         private void CreateShellStream()
         {
-            _shellStream = Session.SshClient.CreateShellStream(terminalName: "Terminal",
+            _shellStream = Session?.SshClient.CreateShellStream(terminalName: "Terminal",
                                     columns: 80, rows: 60, width: 800, height: 600, bufferSize: 65536);
 
             _reader = new StreamReader(_shellStream, Encoding.UTF8,
@@ -422,8 +482,15 @@ namespace SshPoc
 
         #region INotifyPropertyChanged Implementation
 
+        /// <summary>
+        /// Event to trigger change of property value
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        /// <summary>
+        /// Event handler for PropertyChanged
+        /// </summary>
+        /// <param name="propertyName">Name of the changed property</param>
         protected virtual void OnPropertyChanged(string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
