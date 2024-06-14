@@ -75,7 +75,7 @@ namespace SshPoc
             RunStopInjectorContent = "Run Temperature Test"; 
             RunStopAnalyzerContent = "Run Counter Analyzer";
 
-            _threshold = 42.9375;
+            _threshold = 43.0;
 
             //_random = new Random();
             //_currentSecond = 0;

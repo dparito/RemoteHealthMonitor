@@ -6,7 +6,7 @@
         xmlns:d3="clr-namespace:InteractiveDataDisplay.WPF;assembly=InteractiveDataDisplay.WPF"
         xmlns:local="clr-namespace:SshPoc" 
         mc:Ignorable="d"
-        Title="Remote Health Monitor" Height="450" Width="725">
+        Title="Remote Health Monitor" Height="575" Width="725">
     <Window.DataContext>
         <local:LatencyMonitorViewModel />
     </Window.DataContext>
