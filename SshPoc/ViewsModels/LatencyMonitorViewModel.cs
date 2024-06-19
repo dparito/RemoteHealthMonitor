@@ -63,7 +63,8 @@ namespace SshPoc
             IsSshConnectable = false;
             ConnSshStatus = false;
 
-            BaudRate = ComPort = string.Empty;
+            BaudRate = "115200"; 
+            ComPort = string.Empty;
             ConnectSerialButtonContent = "Connect";
             IsSerialConnectable = false;
             ConnSerialStatus = false;
@@ -111,6 +112,8 @@ namespace SshPoc
         /// Object of SessionModel class
         /// </summary>
         public SessionModel? Session { get; private set; }
+
+        public SerialPort? SerialPort { get; private set; }
 
         public string Username
         {
@@ -165,6 +168,11 @@ namespace SshPoc
                 _connectSshButtonContent = value;
                 OnPropertyChanged(nameof(ConnectSshButtonContent));
             }
+        }
+
+        public bool EitherConnStatus
+        {
+            get => ConnSshStatus || ConnSerialStatus;
         }
 
         public bool ConnSshStatus
@@ -372,46 +380,64 @@ namespace SshPoc
             if (ConnectSerialButtonContent == "Connect")
             {
                 Debug.WriteLine($"Connecting to {ComPort}@{BaudRate}");
-                ConnSerialStatus = true;
-                ConnectSerialButtonContent = "Disconnect";
 
                 _ = int.TryParse(BaudRate, out int baud);
 
                 try
                 {
-                    SerialPort COMport = new(ComPort, baud);
+                    SerialPort = new(ComPort, baud);
 
-                    COMport.DataReceived += new SerialDataReceivedEventHandler(sPort_dataReceived);
+                    SerialPort.DataReceived += new SerialDataReceivedEventHandler(sPort_dataReceived);
                     //COMport.ErrorReceived += new SerialErrorReceivedEventHandler(sPort_ErrorReceived);
 
-                    COMport.Parity = Parity.None;
-                    COMport.DataBits = 8;
-                    COMport.StopBits = StopBits.One;
-                    COMport.RtsEnable = true;
-                    COMport.Handshake = Handshake.None;
+                    SerialPort.Parity = Parity.None;
+                    SerialPort.DataBits = 8;
+                    SerialPort.StopBits = StopBits.One;
+                    SerialPort.RtsEnable = true;
+                    SerialPort.Handshake = Handshake.None;
 
-                    COMport.Open();
-                    //COMport.Write("ls -l");
-                    COMport.Write("echo Allspark | sudo -S /home/allspark/loopback.sh");
+                    SerialPort.Open();
+
+                    ConnSerialStatus = true;
+                    ConnectSerialButtonContent = "Disconnect";
+                    Debug.WriteLine($"Connected to {ComPort}@{BaudRate}");
+                    
                     Thread.Sleep(1000);
-                    //COMport.Close();
+
+                    SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1");
                 }
-                catch (Exception e) { MessageBox.Show(e.Message); };
+                catch (Exception e) 
+                {
+                    ConnSerialStatus = false;
+                    ConnectSerialButtonContent = "Connect";
+                    Debug.WriteLine($"Connection failed to {ComPort}@{BaudRate}");
+                    MessageBox.Show(e.Message); 
+                };
             }
             else
             {
+                SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
+                Thread.Sleep(1000);
+                SerialPort.Close();
                 ConnectSerialButtonContent = "Connect";
                 ConnSerialStatus = false;
+                Debug.WriteLine($"Disconnected from {ComPort}@{BaudRate}");
             }
         }
 
         private void sPort_dataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            SerialPort sp = (SerialPort)sender;
-            string indata = sp.ReadExisting();
-            Debug.WriteLine($"Data Received: {indata}");
-
-            MessageBox.Show(indata);
+            try
+            {
+                Debug.WriteLine(SerialPort.ReadLine());
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+            
+            
+            //MessageBox.Show(indata);
         }
 
         #endregion // Serial Communication
@@ -529,7 +555,7 @@ namespace SshPoc
                         _isRecording = true;
                         while (_isRecording)
                         {
-                            StartRecording("echo Allspark | sudo -S /home/allspark/asapp -T");
+                            StartRecording("echo Allspark | sudo -S /home/allspark/loopback.sh");
 
                             await Task.Delay(100);
                         }
@@ -555,11 +581,12 @@ namespace SshPoc
             if (RunStopLoopbackContent == "Run Loopback")
             {
                 RunStopLoopbackContent = "Stop Loopback";
-                if (Session != null && Session.GetConnectionStatus())
+                if (SerialPort != null && SerialPort.IsOpen)
                 {
                     try
                     {
                         var thread = new Thread(RunThis);
+                        //thread.Start("echo Allspark | sudo -S /home/allspark/beta_board_bringup_test/overlay_test/flyingpigs.sh");
                         thread.Start("echo Allspark | sudo -S /home/allspark/loopback.sh");
                     }
                     catch (Exception e) 
@@ -573,8 +600,13 @@ namespace SshPoc
             }
             else
             {
-                Session.RunCommand("echo Allspark | sudo -S killall -9 vdma-out");
-                Session.RunCommand("echo Allspark | sudo -S killall -9 loopback");
+                SerialPort.WriteLine("sudo pkill vdma-out");
+                SerialPort.WriteLine("sudo pkill loopback");
+                SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
+                Thread.Sleep(1000);
+
+                //Session.RunCommand("echo Allspark | sudo -S killall -9 vdma-out");
+                //Session.RunCommand("echo Allspark | sudo -S killall -9 loopback");
                 RunStopLoopbackContent = "Run Loopback";
             }
         }
@@ -603,9 +635,7 @@ namespace SshPoc
         {
             try
             {
-                var resp = Session.RunCommand((string)cmd);
-                if (resp != null)
-                    Debug.WriteLine(resp);
+                SerialPort?.WriteLine((string)cmd);
             }
             catch
             {
