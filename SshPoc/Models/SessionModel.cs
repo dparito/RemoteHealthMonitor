@@ -11,13 +11,15 @@ namespace SshPoc
 {
     public class SessionModel : IDisposable
     {
+        static int ALLSPARK_PORT = 5003;
+        
         #region Member Variables
 
         private static string _sessionId;
         private string _username = String.Empty;
         private string _password = String.Empty;
         private string _ipAddress = String.Empty;
-        private bool _disposedValue;
+        private bool _disposedValue = false;
 
         #endregion // Memeber Variables
 
@@ -35,7 +37,7 @@ namespace SshPoc
             Username = user;
             Password = pass;
             IpAddress = ip;
-            SshClient = new SshClient(host: IpAddress, username: Username, password: Password);
+            SshClient = new SshClient(host: IpAddress, port:ALLSPARK_PORT, username: Username, password: Password);
         }
 
         #endregion // Constructor
@@ -73,11 +75,13 @@ namespace SshPoc
         /// Object of SshClient class
         /// </summary>
         public SshClient SshClient { get; set; }
+        
+        public bool DisposedValue { get => _disposedValue; set => _disposedValue = value; }
 
         #endregion // Public Properties
 
         #region Public Methods
-        
+
         /// <summary>
         /// Establishes SSH connection with a remote client
         /// </summary>
@@ -135,16 +139,17 @@ namespace SshPoc
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposedValue)
+            if (!DisposedValue)
             {
                 if (disposing)
                 {
+                    SshClient?.Dispose();
                     // TODO: dispose managed state (managed objects)
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
                 // TODO: set large fields to null
-                _disposedValue = true;
+                DisposedValue = true;
             }
         }
 

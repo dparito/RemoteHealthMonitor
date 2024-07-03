@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:d3="clr-namespace:InteractiveDataDisplay.WPF;assembly=InteractiveDataDisplay.WPF"
         xmlns:local="clr-namespace:SshPoc" 
         mc:Ignorable="d"
         Title="Remote Health Monitor" Height="575" Width="725">
@@ -11,7 +10,7 @@
         <local:LatencyMonitorViewModel />
     </Window.DataContext>
     <Window.Background>
-        <ImageBrush ImageSource="C:\Users\30793978\source\repos\RemoteHealthMonitor\SshPoc\Images\BgImg_SN3.png" />
+        <ImageBrush ImageSource="pack://application:,,,/Images/BgImg_SN3.png" />
     </Window.Background>
     <Grid>
         <Grid.RowDefinitions>
@@ -47,7 +46,7 @@
                    Foreground="#FF9E18" FontFamily="Avenir" FontSize="23" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" />
 
             <!--SSH TITLE-->
-            <Label Name="lblssh" Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Content="Jetson over SSH" 
+            <Label Name="lblssh" Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Content="SSH Comm" 
                    Foreground="#FF9E18" FontFamily="Avenir" FontSize="18" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
 
             <!--USERNAME-->
@@ -74,7 +73,7 @@
                     Background="#FFCF8E" Width="100" Height="25" HorizontalAlignment="Right" Margin="5,5,88,10" />
 
             <!--SERIAL TITLE-->
-            <Label Name="lblserial" Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" Content="ALLSPARK over Serial" 
+            <Label Name="lblserial" Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" Content="Serial Comm" 
                    Foreground="#FF9E18" FontFamily="Avenir" FontSize="18" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
 
             <!--COM-->
@@ -181,7 +180,7 @@
 
             <!--SEPARATORS-->
             <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="5" Width="1" Background="Black" Margin="0,0,0,0" HorizontalAlignment="Left" />
-            <!--<Border Grid.Column="4" Grid.Row="1" Grid.RowSpan="5" Width="1" Background="Black" Margin="0,0,0,0" HorizontalAlignment="Left" />-->
+            <!--<Border Grid.Column="4" Grid.Row="1" Grid.RowSpan="5" Width="1" Background="Black" Margin="0,0,0,0" HorizontalAli651gnment="Left" />-->
             <!--<Separator Grid.Row="3" Grid.Column="0" Background="Black" Margin="0,0,0,0" VerticalAlignment="Bottom" />-->
             <Separator Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" Background="Black" Margin="0,0,0,0" VerticalAlignment="Bottom" />
             <!--<Separator Grid.Row="1" Grid.Column="4" Background="Black" Margin="0,0,0,0" VerticalAlignment="Bottom" />-->

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
+using System.Net;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -34,20 +35,13 @@ namespace SshPoc
         private bool _isRecording;
         private bool _keepReading;
         private ShellStream? _shellStream;
-        private StreamReader? _reader;
-        private StreamWriter? _writer;
-        private StringBuilder? _streamedResult;
+        private StreamReader? _sshReader;
+        private StreamWriter? _sshWriter;
+        private StringBuilder? _sshStreamedResult;
+        private FileStream? _fileStream;
+        private StreamWriter? _fileWriter;
         private double _threshold;
         private double _temp;
-
-        //private Random _random;
-        //private double _currentSecond;
-        //private double[] _seconds;
-        //private double[] _temps;
-        //DispatcherTimer _timer;
-        //private PointCollection _points;
-        //private bool _isPlottable;
-
 
         #endregion // Private Members
 
@@ -57,8 +51,8 @@ namespace SshPoc
         {
             //Username = HostIpAddress = Password = string.Empty;
             Username = "allspark";
-            HostIpAddress = "10.160.8.138"; 
-            Password = string.Empty;
+            HostIpAddress = string.Empty;
+            Password = "Allspark";
             ConnectSshButtonContent = "Connect";
             IsSshConnectable = false;
             ConnSshStatus = false;
@@ -73,7 +67,7 @@ namespace SshPoc
             _isRecording = _keepReading = false;
 
             RunStopLoopbackContent = "Run Loopback";
-            RunStopInjectorContent = "Run Temperature Test"; 
+            RunStopInjectorContent = "Run EMI Stress Test";
             RunStopAnalyzerContent = "Run Counter Analyzer";
 
             _threshold = 43.0;
@@ -452,7 +446,7 @@ namespace SshPoc
             // To establish a connection
             if (ConnectSshButtonContent == "Connect")
             {
-                if (Session == null)
+                if (Session == null || Session.DisposedValue)
                 {
                     Session = new SessionModel(HostIpAddress, Username, Password);
 
@@ -480,21 +474,26 @@ namespace SshPoc
                                     ConnSshStatus = true;
 
                                     // Instantiate shell stream, stream reader and writer for first connection
-                                    if (_shellStream == null && _reader == null && _writer == null)
+                                    if (_shellStream == null && _sshReader == null && _sshWriter == null)
                                         CreateShellStream();
                                 }
                             }
                             catch (Exception ex)
                             {
+                                MessageBox.Show($"Failed to connect to {Username}@{HostIpAddress}");
                                 Debug.WriteLine(ex.Message);
-                                IsSshConnectable = false;
+                                //IsSshConnectable = false;
+                                Session?.DisconnectSsh();
+                                Session?.Dispose();
+                                ConnectSshButtonContent = "Connect";
+                                ConnSshStatus = false;
                             }
                         }
                         else
                         {
                             MessageBox.Show("Invalid Credentials");
                             Debug.WriteLine("Invalid Credentials");
-                            IsSshConnectable = false;
+                            //IsSshConnectable = false;
                         }                            
                     }
                     else
@@ -512,8 +511,8 @@ namespace SshPoc
                 if (_isRecording || _keepReading)
                     StopRecording();
 
-                Session?.DisconnectSsh();
-                Session?.Dispose();
+                //Session?.DisconnectSsh();
+                //Session?.Dispose();
                 ConnectSshButtonContent = "Connect";
                 ConnSshStatus = false;
                 Debug.WriteLine($"Disconnected {Session.IpAddress}");
@@ -534,16 +533,13 @@ namespace SshPoc
 
         private async void RunInjectorButtonPress()
         {
-            if (RunStopInjectorContent == "Run Temperature Test")
+            if (RunStopInjectorContent == "Run EMI Stress Test")
             {
-                RunStopInjectorContent = "Stop Temperature Test";
+                RunStopInjectorContent = "Stop EMI Stress Test";
                 if (Session != null && Session.GetConnectionStatus())
                 {
                     try
                     {
-                        //var thread = new Thread(RunThis);
-                        //thread.Start("echo Allspark | sudo -S /home/allspark/intertek.sh");
-
                         // reopen the shell stream if already closed
                         if (!_shellStream.CanWrite)
                             CreateShellStream();
@@ -555,7 +551,8 @@ namespace SshPoc
                         _isRecording = true;
                         while (_isRecording)
                         {
-                            StartRecording("echo Allspark | sudo -S /home/allspark/loopback.sh");
+                            //StartRecording("echo Allspark | sudo -S /home/allspark/loopback.sh");
+                            StartRecording("echo Allspark | sudo -S /home/allspark/intertek.sh");
 
                             await Task.Delay(100);
                         }
@@ -571,23 +568,23 @@ namespace SshPoc
             }
             else
             {
-                RunStopInjectorContent = "Run Temperature Test";
+                RunStopInjectorContent = "EMI Stress Test";
                 StopRecording();
             }
         }
 
         private void RunLoopbackButtonPress()
         {
-            if (RunStopLoopbackContent == "Run Loopback")
+            if (RunStopLoopbackContent == "Run EMI Stress Test")
             {
-                RunStopLoopbackContent = "Stop Loopback";
+                RunStopLoopbackContent = "Stop EMI Stress Test";
                 if (SerialPort != null && SerialPort.IsOpen)
                 {
                     try
                     {
                         var thread = new Thread(RunThis);
                         //thread.Start("echo Allspark | sudo -S /home/allspark/beta_board_bringup_test/overlay_test/flyingpigs.sh");
-                        thread.Start("echo Allspark | sudo -S /home/allspark/loopback.sh");
+                        thread.Start("echo Allspark | sudo -S /home/allspark/intertek.sh");
                     }
                     catch (Exception e) 
                     {
@@ -600,14 +597,14 @@ namespace SshPoc
             }
             else
             {
-                SerialPort.WriteLine("sudo pkill vdma-out");
-                SerialPort.WriteLine("sudo pkill loopback");
-                SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
+                //SerialPort.WriteLine("sudo pkill vdma-out");
+                //SerialPort.WriteLine("sudo pkill loopback");
+                //SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
                 Thread.Sleep(1000);
 
                 //Session.RunCommand("echo Allspark | sudo -S killall -9 vdma-out");
                 //Session.RunCommand("echo Allspark | sudo -S killall -9 loopback");
-                RunStopLoopbackContent = "Run Loopback";
+                RunStopLoopbackContent = "Run EMI Stress Test";
             }
         }
 
@@ -676,11 +673,13 @@ namespace SshPoc
         private void StopRecording()
         {
             _shellStream.Flush();
-            _writer.Flush();
-            _reader.DiscardBufferedData();
-            _streamedResult.Clear();
+            _sshWriter.Flush();
+            _sshReader.DiscardBufferedData();
+            _sshStreamedResult.Clear();
+            _fileWriter.Flush();
+            _fileWriter.Close();
 
-            _reader.BaseStream.Close();
+            _sshReader.BaseStream.Close();
 
             _isRecording = false;
             _keepReading = false;
@@ -692,7 +691,7 @@ namespace SshPoc
         /// <param name="cmd">user command as string</param>
         private void WriteStream(string cmd)
         {
-            _writer.WriteLine(cmd);
+            _sshWriter.WriteLine(cmd);
             while (_shellStream.Length == 0)
             {
                 Thread.Sleep(500);
@@ -704,7 +703,7 @@ namespace SshPoc
         /// </summary>
         private void ReceiveData()
         {
-            _streamedResult = new StringBuilder();
+            _sshStreamedResult = new StringBuilder();
 
             // keep receiving data until stream active, every 200 ms
             while (_keepReading)
@@ -712,15 +711,16 @@ namespace SshPoc
                 try
                 {
                     // if reader object valid 
-                    if (_reader != null)
+                    if (_sshReader != null)
                     {
                         string line;
 
                         // while remote SSH terminal responds with a non-null string
-                        while ((line = _reader.ReadLine()) != null)
+                        while ((line = _sshReader.ReadLine()) != null)
                         {
-                            _streamedResult.AppendLine("\n" + line);
+                            _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
+                            _fileWriter.WriteLine(line);
 
                             if (line.Contains("Value"))
                             {
@@ -733,10 +733,10 @@ namespace SshPoc
                         }
 
                         // Process data received from remote SSH terminal in this session
-                        if (!string.IsNullOrEmpty(_streamedResult.ToString()))
+                        if (!string.IsNullOrEmpty(_sshStreamedResult.ToString()))
                         {
                             // TODO - Parse data at this point
-                            Debug.WriteLine(_streamedResult.ToString());
+                            Debug.WriteLine(_sshStreamedResult.ToString());
                         }
                     }
                 }
@@ -757,23 +757,16 @@ namespace SshPoc
             _shellStream = Session?.SshClient.CreateShellStream(terminalName: "Terminal",
                                     columns: 80, rows: 60, width: 800, height: 600, bufferSize: 65536);
 
-            _reader = new StreamReader(_shellStream, Encoding.UTF8,
+            _sshReader = new StreamReader(_shellStream, Encoding.UTF8,
                 detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
 
-            _writer = new StreamWriter(_shellStream) { AutoFlush = true };
+            _sshWriter = new StreamWriter(_shellStream) { AutoFlush = true };
+
+            var filename = @"C:\Temp\RemoteHealth_Service.log";
+            _fileWriter = new StreamWriter(filename, append:File.Exists(filename));
         }
 
         #endregion // SSH Communication
-
-        //private void Timer_Tick()
-        //{
-        //    _currentSecond++;
-        //    double x = _currentSecond * 10;
-        //    double y = _random.Next(1, 200);
-        //    //if (_keepReading)
-        //    //    Points.Add(new Point(x, _temp));
-        //    Points.Add(new Point(x, y));
-        //}
 
         #endregion // Private Methods
 
@@ -795,11 +788,4 @@ namespace SshPoc
 
         #endregion // INotifyPropertyChanged Implementation
     }
-
-    //public class MyModel
-    //{
-    //    public PointCollection Points { get; set; } = new PointCollection();
-
-    //    public string ColorName { get; set; }
-    //}
 }
