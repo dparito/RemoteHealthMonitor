@@ -1,0 +1,8 @@
+gpuBurn:
+  matrixMulResult: FAIL
+asapp:
+  maxTemp: 65
+wifiFlooding:
+  timeoutPhrase: timeout
+latency:
+  maxFrameLatency: 3

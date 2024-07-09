@@ -78,7 +78,7 @@ namespace SshPoc
         /// <summary>
         /// Object of SessionModel class
         /// </summary>
-        public SessionModel? Session { get; private set; }
+        public SshSessionModel? Session { get; private set; }
 
         public string Username 
         { 
@@ -270,7 +270,7 @@ namespace SshPoc
             {
                 if (Session == null)
                 {
-                    Session = new SessionModel(HostIpAddress, Username, Password);
+                    Session = new SshSessionModel(HostIpAddress, Username, Password, 22);
 
                     // if a valid SSH connection already exists
                     if (!Session.GetConnectionStatus())
@@ -280,7 +280,7 @@ namespace SshPoc
                         {
                             try
                             {
-                                Session.ConnectSsh();
+                                Session.ConnectSsh(SshSessionModel.TestType.GpuBurn);
 
                                 // if connection established
                                 if (Session.GetConnectionStatus())

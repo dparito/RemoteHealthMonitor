@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleSshConnect", "Consol
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleSerialConnect", "ConsoleSerialConnect\ConsoleSerialConnect.csproj", "{D6E01F32-1A49-48BB-91DA-10D8D8FA3C40}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupRemoteHealthMonitor", "SetupRemoteHealthMonitor\SetupRemoteHealthMonitor.vdproj", "{408737F5-71EF-4736-B40C-6D9E3298D32F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YamlParser", "YamlParser\YamlParser.csproj", "{F2EEC1DC-714E-4269-8213-57220F3FF3F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

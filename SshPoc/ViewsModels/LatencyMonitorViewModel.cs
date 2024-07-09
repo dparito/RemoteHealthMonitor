@@ -1,5 +1,6 @@
 ﻿using Renci.SshNet;
 using System.ComponentModel;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
@@ -16,32 +17,38 @@ namespace SshPoc
     {
         #region Private Members
 
-        private string _username;
-        private string _password;
-        private string _hostIpAddr;
-        private string _connectSshButtonContent;
-        private bool _connSshStatus;
-        private bool _isSshConnectable;
-        private bool _currentErrorStatus;
-        private bool _isLastErrorCleared;
+        // Configuration
+        private string _allsparkUsername;
+        private string _allsparkPassword;
+        private string _allsparkHostIpAddr;
+        private bool _isAllsparkConnectable = false;
+        private string _connectAllsparkButtonContent;
+
+        private string _jetsonUsername;
+        private string _jetsonPassword;
+        private string _jetsonHostIpAddr;
+        private bool _isJetsonConnectable = false;
+        private string _connectJetsonButtonContent;
+        
         private string _baudRate;
         private string _comPort;
-        private bool _isSerialConnectable;
+        private bool _isSerialConnectable = false;
         private bool _connSerialStatus;
         private string _connectSerialButtonContent;
+
+        // GPU Burn Test
+        private string _runStopGpuBurnTestContent;
+        
+        // ASAPP Test
+        private string _runStopAsappTestContent;
+        
+        // Wi-Fi Flooding Test
+        private string _runStopWiFiFloodingTestContent;
+
+        // Latency Test
         private string _runStopLoopbackContent;
         private string _runStopInjectorContent;
         private string _runStopAnalyzerContent;
-        private bool _isRecording;
-        private bool _keepReading;
-        private ShellStream? _shellStream;
-        private StreamReader? _sshReader;
-        private StreamWriter? _sshWriter;
-        private StringBuilder? _sshStreamedResult;
-        private FileStream? _fileStream;
-        private StreamWriter? _fileWriter;
-        private double _threshold;
-        private double _temp;
 
         #endregion // Private Members
 
@@ -49,173 +56,206 @@ namespace SshPoc
 
         public LatencyMonitorViewModel()
         {
-            //Username = HostIpAddress = Password = string.Empty;
-            Username = "allspark";
-            HostIpAddress = string.Empty;
-            Password = "Allspark";
-            ConnectSshButtonContent = "Connect";
-            IsSshConnectable = false;
-            ConnSshStatus = false;
+            // Configuration
+            AllsparkUsername = "allspark";
+            AllsparkHostIpAddress = string.Empty;
+            AllsparkPassword = "Allspark";
+            IsAllsparkConnectable = false;
+            
+            JetsonUsername = "allspark";
+            JetsonHostIpAddress = string.Empty;
+            JetsonPassword = "Allspark";
+            IsJetsonConnectable = false;
 
-            BaudRate = "115200"; 
+            BaudRate = "115200";
             ComPort = string.Empty;
-            ConnectSerialButtonContent = "Connect";
             IsSerialConnectable = false;
             ConnSerialStatus = false;
             
-            CurrentErrorStatus = IsLastErrorCleared = false;
-            _isRecording = _keepReading = false;
-
-            RunStopLoopbackContent = "Run Loopback";
-            RunStopInjectorContent = "Run EMI Stress Test";
-            RunStopAnalyzerContent = "Run Counter Analyzer";
-
-            _threshold = 43.0;
-
-            //_random = new Random();
-            //_currentSecond = 0;
-            //Temperature = 0.0;
-            //Points = new PointCollection();
-            //_seconds = [];
-            //_temps = [];
-            //_isPlottable = false;
-            //MyModel = new MyModel()
-            //{
-            //    Points = Points,
-            //    ColorName = "black",
-            //};
-            //_timer = new DispatcherTimer();
-            //_timer.Tick += Timer_Tick;
-            //_timer.Interval = TimeSpan.FromMilliseconds(500);
-            //_timer.Start();
-
-            ConnectSshCommand = new RelayCommand(ConnectSshButtonPress);
+            ConnectSerialButtonContent = "Connect";
+            ConnectAllsparkButtonContent = "Connect";
+            ConnectJetsonButtonContent = "Connect";
+            ConnectAllsparkCommand = new RelayCommand(ConnectAllsparkButtonPress);
+            ConnectJetsonCommand = new RelayCommand(ConnectJetsonButtonPress);
             ConnectSerialCommand = new RelayCommand(ConnectSerialButtonPress);
-            RunLoopbackCmd = new RelayCommand(RunLoopbackButtonPress);
-            RunInjectorCmd = new RelayCommand(RunInjectorButtonPress);
-            RunAnalyzer = new RelayCommand(RunAnalyzerButtonPress);
-            //PlotCommand = new RelayCommand(PlotButtonPress);
-            ClearLastErrorCommand = new RelayCommand(ClearLastErrorButtonPress);
+
+            // GPU Burn Test
+            GpuBurnSession = new SshSessionModel();
+            RunStopGpuBurnTestContent = "Run GPU Burn Test";
+            RunGpuBurnTestCommand = new RelayCommand(RunGpuBurnTestButtonPress);
+            ClearLastErrorCommandGpu = new RelayCommand(ClearLastErrorButtonPressGpu);
+
+            // ASAPP Test
+            AsappSession = new SshSessionModel();
+            RunStopAsappTestContent = "Run ASAPP Test";
+            RunAsappTestCommand = new RelayCommand(RunAsappTestButtonPress);
+            ClearLastErrorCommandAsapp = new RelayCommand(ClearLastErrorButtonPressAsapp);
+
+            // Wi-Fi Flooding Test
+            WifiPingSession = new SshSessionModel();
+            RunStopWiFiFloodingTestContent = "Run Wi-Fi Flooding Test";
+            RunWiFiFloodTestCommand = new RelayCommand(RunWiFiFloodTestButtonPress);
+            ClearLastErrorCommandWiFi = new RelayCommand(ClearLastErrorButtonPressWiFi);
+
+            // Latency Test
+            LatencySessionOnAllspark = new SshSessionModel();
+            LatencySessionOnJetson = new SshSessionModel();
+            RunStopLoopbackContent = "Run Loopback";
+            RunStopInjectorContent = "Run Counter Injector";
+            RunStopAnalyzerContent = "Run Counter Analyzer";
+            RunLoopbackCommand = new RelayCommand(RunLoopbackButtonPress);
+            RunInjectorCommand = new RelayCommand(RunInjectorButtonPress);
+            RunAnalyzerCommand = new RelayCommand(RunAnalyzerButtonPress);
+            ClearLastErrorCommandLatency = new RelayCommand(ClearLastErrorButtonPressLatency);
         }
 
         #endregion // Constructors
 
-        #region Public Properties
+        #region Configuration Properties
+        
+        public string AllsparkUsername
+        {
+            get => _allsparkUsername;
+            set
+            {
+                if (_allsparkUsername != value)
+                {
+                    _allsparkUsername = value;
+                    OnPropertyChanged(nameof(AllsparkUsername));
 
-        /// <summary>
-        /// Object of SessionModel class
-        /// </summary>
-        public SessionModel? Session { get; private set; }
+                    IsAllsparkConnectable = (AllsparkUsername != string.Empty && AllsparkPassword != string.Empty && AllsparkHostIpAddress != string.Empty);
+                }
+            }
+        }
 
+        public string AllsparkPassword
+        {
+            get => _allsparkPassword;
+            set
+            {
+                if (_allsparkPassword != value)
+                {
+                    _allsparkPassword = value;
+                    OnPropertyChanged(nameof(AllsparkPassword));
+
+                    IsAllsparkConnectable = (AllsparkUsername != string.Empty && AllsparkPassword != string.Empty && AllsparkHostIpAddress != string.Empty);
+                }
+            }
+        }
+
+        public string AllsparkHostIpAddress
+        {
+            get => _allsparkHostIpAddr;
+            set
+            {
+                if (_allsparkHostIpAddr != value)
+                {
+                    _allsparkHostIpAddr = value;
+                    OnPropertyChanged(nameof(AllsparkHostIpAddress));
+
+                    IsAllsparkConnectable = (AllsparkUsername != string.Empty && AllsparkPassword != string.Empty && AllsparkHostIpAddress != string.Empty);
+                }
+            }
+        }
+
+        public bool IsAllsparkConnectable
+        {
+            get => _isAllsparkConnectable;
+            set
+            {
+                if (value !=  _isAllsparkConnectable) 
+                {
+                    _isAllsparkConnectable = value;
+                    OnPropertyChanged(nameof(IsAllsparkConnectable));
+                }
+            }
+        }
+
+        public string ConnectAllsparkButtonContent
+        {
+            get => _connectAllsparkButtonContent;
+            set
+            {
+                _connectAllsparkButtonContent = value;
+                OnPropertyChanged(nameof(ConnectAllsparkButtonContent));
+            }
+        }
+        
+        public ICommand ConnectAllsparkCommand { get; private set; }
+
+
+        public string JetsonUsername
+        {
+            get => _jetsonUsername;
+            set
+            {
+                if (_jetsonUsername != value)
+                {
+                    _jetsonUsername = value;
+                    OnPropertyChanged(nameof(JetsonUsername));
+
+                    IsJetsonConnectable = (JetsonUsername != string.Empty && JetsonPassword != string.Empty && JetsonHostIpAddress != string.Empty);
+                }
+            }
+        }
+
+        public string JetsonPassword
+        {
+            get => _jetsonPassword;
+            set
+            {
+                if (_jetsonPassword != value)
+                {
+                    _jetsonPassword = value;
+                    OnPropertyChanged(nameof(JetsonPassword));
+
+                    IsJetsonConnectable = (JetsonUsername != string.Empty && JetsonPassword != string.Empty && JetsonHostIpAddress != string.Empty);
+                }
+            }
+        }
+
+        public string JetsonHostIpAddress
+        {
+            get => _jetsonHostIpAddr;
+            set
+            {
+                if (_jetsonHostIpAddr != value)
+                {
+                    _jetsonHostIpAddr = value;
+                    OnPropertyChanged(nameof(JetsonHostIpAddress));
+
+                    IsJetsonConnectable = (JetsonUsername != string.Empty && JetsonPassword != string.Empty && JetsonHostIpAddress != string.Empty);
+                }
+            }
+        }
+
+        public bool IsJetsonConnectable
+        {
+            get => _isJetsonConnectable;
+            set
+            {
+                if (value != _isJetsonConnectable)
+                {
+                    _isJetsonConnectable = value;
+                    OnPropertyChanged(nameof(IsJetsonConnectable));
+                }
+            }
+        }
+
+        public string ConnectJetsonButtonContent
+        {
+            get => _connectJetsonButtonContent;
+            set
+            {
+                _connectJetsonButtonContent = value;
+                OnPropertyChanged(nameof(ConnectJetsonButtonContent));
+            }
+        }
+        
+        public ICommand ConnectJetsonCommand { get; private set; }
+
+        
         public SerialPort? SerialPort { get; private set; }
-
-        public string Username
-        {
-            get => _username;
-            set
-            {
-                if (_username != value)
-                {
-                    _username = value;
-                    OnPropertyChanged(nameof(Username));
-
-                    IsSshConnectable = (Username != string.Empty && Password != string.Empty && HostIpAddress != string.Empty);
-                }
-            }
-        }
-
-        public string Password
-        {
-            get => _password;
-            set
-            {
-                if (_password != value)
-                {
-                    _password = value;
-                    OnPropertyChanged(nameof(Password));
-
-                    IsSshConnectable = (Username != string.Empty && Password != string.Empty && HostIpAddress != string.Empty);
-                }
-            }
-        }
-
-        public string HostIpAddress
-        {
-            get => _hostIpAddr;
-            set
-            {
-                if (_hostIpAddr != value)
-                {
-                    _hostIpAddr = value;
-                    OnPropertyChanged(nameof(HostIpAddress));
-
-                    IsSshConnectable = (Username != string.Empty && Password != string.Empty && HostIpAddress != string.Empty);
-                }
-            }
-        }
-
-        public string ConnectSshButtonContent
-        {
-            get => _connectSshButtonContent;
-            set
-            {
-                _connectSshButtonContent = value;
-                OnPropertyChanged(nameof(ConnectSshButtonContent));
-            }
-        }
-
-        public bool EitherConnStatus
-        {
-            get => ConnSshStatus || ConnSerialStatus;
-        }
-
-        public bool ConnSshStatus
-        {
-            get => _connSshStatus;
-            set
-            {
-                if (value != _connSshStatus)
-                {
-                    _connSshStatus = value;
-                    OnPropertyChanged(nameof(ConnSshStatus));
-
-                    if (!ConnSshStatus)
-                    {
-                        CurrentErrorStatus = ConnSshStatus;
-                        IsLastErrorCleared = ConnSshStatus;
-                    }
-                }
-            }
-        }
-
-        public bool CurrentErrorStatus
-        {
-            get => _currentErrorStatus;
-            set
-            {
-                if (value != _currentErrorStatus)
-                {
-                    _currentErrorStatus = value;
-                    OnPropertyChanged(nameof(CurrentErrorStatus));
-
-                    if (value == false)
-                        IsLastErrorCleared = false;
-                }
-            }
-        }
-
-        public bool IsLastErrorCleared
-        {
-            get => _isLastErrorCleared;
-            set
-            {
-                if (value != _isLastErrorCleared)
-                {
-                    _isLastErrorCleared = value;
-                    OnPropertyChanged(nameof(IsLastErrorCleared));
-                }
-            }
-        }
 
         public string BaudRate
         {
@@ -241,59 +281,29 @@ namespace SshPoc
             }
         }
 
-        public bool IsSshConnectable
+        public string ConnectSerialButtonContent
         {
-            get => _isSshConnectable;
+            get => _connectSerialButtonContent;
             set
             {
-                _isSshConnectable = value;
-                OnPropertyChanged(nameof(IsSshConnectable));
+                _connectSerialButtonContent = value;
+                OnPropertyChanged(nameof(ConnectSerialButtonContent));
             }
         }
-
-        public bool IsSerialConnectable 
-        { 
-            get => _isSerialConnectable; 
+        
+        public bool IsSerialConnectable
+        {
+            get => _isSerialConnectable;
             set
             {
                 _isSerialConnectable = value;
                 OnPropertyChanged(nameof(IsSerialConnectable));
             }
         }
-
-        public string RunStopLoopbackContent 
-        { 
-            get => _runStopLoopbackContent; 
-            set
-            {
-                _runStopLoopbackContent = value;
-                OnPropertyChanged(nameof(RunStopLoopbackContent));
-            }
-        }
         
-        public string RunStopInjectorContent 
-        { 
-            get => _runStopInjectorContent; 
-            set
-            {
-                _runStopInjectorContent = value;
-                OnPropertyChanged(nameof(RunStopInjectorContent));
-            }
-        }
-        
-        public string RunStopAnalyzerContent 
-        { 
-            get => _runStopAnalyzerContent; 
-            set
-            {
-                _runStopAnalyzerContent = value;
-                OnPropertyChanged(nameof(RunStopAnalyzerContent));
-            }
-        }
-
-        public bool ConnSerialStatus 
-        { 
-            get => _connSerialStatus; 
+        public bool ConnSerialStatus
+        {
+            get => _connSerialStatus;
             set
             {
                 _connSerialStatus = value;
@@ -301,68 +311,120 @@ namespace SshPoc
             }
         }
 
-        public string ConnectSerialButtonContent 
-        { 
-            get => _connectSerialButtonContent; 
+        public ICommand ConnectSerialCommand { get; private set; }        
+
+        #endregion // Configuration Properties
+
+
+        #region GPU Burn Test Properties
+
+        public SshSessionModel? GpuBurnSession { get; private set; }
+
+        public string RunStopGpuBurnTestContent
+        {
+            get => _runStopGpuBurnTestContent;
             set
             {
-                _connectSerialButtonContent = value;
-                OnPropertyChanged(nameof(ConnectSerialButtonContent));
+                _runStopGpuBurnTestContent = value;
+                OnPropertyChanged(nameof(RunStopGpuBurnTestContent)); 
             }
         }
 
-        //public PointCollection Points 
-        //{ 
-        //    get => _points; 
-        //    set
-        //    {
-        //        _points = value;
-        //        OnPropertyChanged(nameof(Points));
-        //    }
-        //}
+        public ICommand RunGpuBurnTestCommand { get; private set; }
 
-        public double Temperature 
-        { 
-            get => _temp; 
+        public ICommand ClearLastErrorCommandGpu { get; private set; }
+
+        #endregion // GPU Burn Test Properties
+
+        
+        #region ASAPP Test Properties
+
+        public SshSessionModel? AsappSession { get; private set; }
+
+        public string RunStopAsappTestContent
+        {
+            get => _runStopAsappTestContent;
             set
             {
-                _temp = value;
-                OnPropertyChanged(nameof(Temperature));
+                _runStopAsappTestContent = value;
+                OnPropertyChanged(nameof(RunStopAsappTestContent));
             }
         }
 
-        //public bool IsPlottable
-        //{
-        //    get => _isPlottable;
-        //    set
-        //    {
-        //        _isPlottable = value;
-        //        OnPropertyChanged(nameof(IsPlottable));
-        //    }
-        //}
+        public ICommand RunAsappTestCommand { get; private set; }
 
-        //public MyModel MyModel { get; set; }
+        public ICommand ClearLastErrorCommandAsapp { get; private set; }
 
-        public ICommand ConnectSshCommand { get; private set; }
+        #endregion // ASAPP Test Properties
 
-        public ICommand ConnectSerialCommand { get; private set; }
-
-        public ICommand RunLoopbackCmd { get; private set; }
         
-        public ICommand RunInjectorCmd { get; private set; }
+        #region Wi-Fi Flooding Test Properties
+
+        public SshSessionModel? WifiPingSession { get; private set; }
+
+        public string RunStopWiFiFloodingTestContent
+        {
+            get => _runStopWiFiFloodingTestContent;
+            set
+            {
+                _runStopWiFiFloodingTestContent = value;
+                OnPropertyChanged(nameof(RunStopWiFiFloodingTestContent));
+            }
+        }
+
+        public ICommand RunWiFiFloodTestCommand { get; private set; }
+
+        public ICommand ClearLastErrorCommandWiFi { get; private set; }
+
+        #endregion  // Wi-Fi Flooding Test Properties
+
         
-        public ICommand RunAnalyzer { get; private set; }
+        #region Latency Test Properties
 
-        public ICommand PlotCommand { get; private set; }
+        public SshSessionModel? LatencySessionOnJetson { get; private set; }
+        
+        public SshSessionModel? LatencySessionOnAllspark { get; private set; }
 
-        public ICommand ClearLastErrorCommand { get; private set; }
+        public string RunStopLoopbackContent
+        {
+            get => _runStopLoopbackContent;
+            set
+            {
+                _runStopLoopbackContent = value;
+                OnPropertyChanged(nameof(RunStopLoopbackContent));
+            }
+        }
 
-        #endregion // Public Properties
+        public string RunStopInjectorContent
+        {
+            get => _runStopInjectorContent;
+            set
+            {
+                _runStopInjectorContent = value;
+                OnPropertyChanged(nameof(RunStopInjectorContent));
+            }
+        }
 
-        #region Public Methods
-        #endregion // Public Methods
+        public string RunStopAnalyzerContent
+        {
+            get => _runStopAnalyzerContent;
+            set
+            {
+                _runStopAnalyzerContent = value;
+                OnPropertyChanged(nameof(RunStopAnalyzerContent));
+            }
+        }
 
-        #region Private Methods
+        public ICommand ClearLastErrorCommandLatency { get; private set; }
+
+        public ICommand RunLoopbackCommand { get; private set; }
+
+        public ICommand RunInjectorCommand { get; private set; }
+
+        public ICommand RunAnalyzerCommand { get; private set; }
+
+        #endregion // Latency Test Properties
+
 
         #region Serial Communication
 
@@ -373,45 +435,53 @@ namespace SshPoc
         {
             if (ConnectSerialButtonContent == "Connect")
             {
-                Debug.WriteLine($"Connecting to {ComPort}@{BaudRate}");
-
-                _ = int.TryParse(BaudRate, out int baud);
-
-                try
+                if (ComPort != string.Empty && BaudRate != string.Empty)
                 {
-                    SerialPort = new(ComPort, baud);
+                    Debug.WriteLine($"Connecting to {ComPort}@{BaudRate}");
 
-                    SerialPort.DataReceived += new SerialDataReceivedEventHandler(sPort_dataReceived);
-                    //COMport.ErrorReceived += new SerialErrorReceivedEventHandler(sPort_ErrorReceived);
+                    _ = int.TryParse(BaudRate, out int baud);
 
-                    SerialPort.Parity = Parity.None;
-                    SerialPort.DataBits = 8;
-                    SerialPort.StopBits = StopBits.One;
-                    SerialPort.RtsEnable = true;
-                    SerialPort.Handshake = Handshake.None;
+                    try
+                    {
+                        SerialPort = new(ComPort, baud);
 
-                    SerialPort.Open();
+                        SerialPort.DataReceived += new SerialDataReceivedEventHandler(sPort_dataReceived);
+                        //COMport.ErrorReceived += new SerialErrorReceivedEventHandler(sPort_ErrorReceived);
 
-                    ConnSerialStatus = true;
-                    ConnectSerialButtonContent = "Disconnect";
-                    Debug.WriteLine($"Connected to {ComPort}@{BaudRate}");
-                    
-                    Thread.Sleep(1000);
+                        SerialPort.Parity = Parity.None;
+                        SerialPort.DataBits = 8;
+                        SerialPort.StopBits = StopBits.One;
+                        SerialPort.RtsEnable = true;
+                        SerialPort.Handshake = Handshake.None;
 
-                    SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1");
+                        SerialPort.Open();
+
+                        ConnSerialStatus = true;
+                        ConnectSerialButtonContent = "Disconnect";
+                        Debug.WriteLine($"Connected to {ComPort}@{BaudRate}");
+
+                        Thread.Sleep(1000);
+
+                        SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1");
+                    }
+                    catch (Exception e)
+                    {
+                        ConnSerialStatus = false;
+                        ConnectSerialButtonContent = "Connect";
+                        Debug.WriteLine($"Connection failed to {ComPort}@{BaudRate}");
+                        MessageBox.Show(e.Message);
+                    }
                 }
-                catch (Exception e) 
+                else
                 {
+                    MessageBox.Show("Invalid Credentials");
                     ConnSerialStatus = false;
-                    ConnectSerialButtonContent = "Connect";
-                    Debug.WriteLine($"Connection failed to {ComPort}@{BaudRate}");
-                    MessageBox.Show(e.Message); 
-                };
+                }
             }
             else
             {
-                SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
-                Thread.Sleep(1000);
+                //SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
+                //Thread.Sleep(1000);
                 SerialPort.Close();
                 ConnectSerialButtonContent = "Connect";
                 ConnSerialStatus = false;
@@ -434,200 +504,6 @@ namespace SshPoc
             //MessageBox.Show(indata);
         }
 
-        #endregion // Serial Communication
-
-        #region SSH Communication
-
-        /// <summary>
-        /// Connects/disconnects with a remote client over SSH
-        /// </summary>
-        private void ConnectSshButtonPress()
-        {
-            // To establish a connection
-            if (ConnectSshButtonContent == "Connect")
-            {
-                if (Session == null || Session.DisposedValue)
-                {
-                    Session = new SessionModel(HostIpAddress, Username, Password);
-
-                    // if a valid SSH connection already exists
-                    if (!Session.GetConnectionStatus())
-                    {
-                        // if remote client credentials are invalid
-                        if (Session.IpAddress != null || Session.Username != null)
-                        {
-                            IsSshConnectable = true;
-                            try
-                            {
-                                Debug.WriteLine($"Connecting {Session.IpAddress}");
-
-                                Session.ConnectSsh();
-
-                                // if connection established
-                                if (Session.GetConnectionStatus())
-                                {
-                                    //Debug.WriteLine(Session.RunCommand("ls -l"));
-                                    Debug.WriteLine($"Connected {Session.IpAddress}");
-                                    
-                                    // Changes button label 
-                                    ConnectSshButtonContent = "Disconnect";
-                                    ConnSshStatus = true;
-
-                                    // Instantiate shell stream, stream reader and writer for first connection
-                                    if (_shellStream == null && _sshReader == null && _sshWriter == null)
-                                        CreateShellStream();
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                MessageBox.Show($"Failed to connect to {Username}@{HostIpAddress}");
-                                Debug.WriteLine(ex.Message);
-                                //IsSshConnectable = false;
-                                Session?.DisconnectSsh();
-                                Session?.Dispose();
-                                ConnectSshButtonContent = "Connect";
-                                ConnSshStatus = false;
-                            }
-                        }
-                        else
-                        {
-                            MessageBox.Show("Invalid Credentials");
-                            Debug.WriteLine("Invalid Credentials");
-                            //IsSshConnectable = false;
-                        }                            
-                    }
-                    else
-                    {
-                        MessageBox.Show("Session already connected!");
-                        Debug.WriteLine("Session already connected!");
-                    }
-                }
-            }
-            // To disconnect from a remote client
-            else
-            {
-                Debug.WriteLine($"Disconnecting {Session.IpAddress}");
-
-                if (_isRecording || _keepReading)
-                    StopRecording();
-
-                //Session?.DisconnectSsh();
-                //Session?.Dispose();
-                ConnectSshButtonContent = "Connect";
-                ConnSshStatus = false;
-                Debug.WriteLine($"Disconnected {Session.IpAddress}");
-            }
-        }
-
-        private void RunAnalyzerButtonPress()
-        {
-            if (RunStopAnalyzerContent == "Run Counter Analyzer")
-            {
-                RunStopAnalyzerContent = "Stop Counter Analyzer";
-            }
-            else
-            {
-                RunStopAnalyzerContent = "Run Counter Analyzer";
-            }
-        }
-
-        private async void RunInjectorButtonPress()
-        {
-            if (RunStopInjectorContent == "Run EMI Stress Test")
-            {
-                RunStopInjectorContent = "Stop EMI Stress Test";
-                if (Session != null && Session.GetConnectionStatus())
-                {
-                    try
-                    {
-                        // reopen the shell stream if already closed
-                        if (!_shellStream.CanWrite)
-                            CreateShellStream();
-
-                        // changes status indicators
-                        CurrentErrorStatus = true;
-                        IsLastErrorCleared = true;
-
-                        _isRecording = true;
-                        while (_isRecording)
-                        {
-                            //StartRecording("echo Allspark | sudo -S /home/allspark/loopback.sh");
-                            StartRecording("echo Allspark | sudo -S /home/allspark/intertek.sh");
-
-                            await Task.Delay(100);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.Message);
-                        Debug.WriteLine(e.Message);
-                    }
-                }
-                else
-                    MessageBox.Show("Invalid Session");
-            }
-            else
-            {
-                RunStopInjectorContent = "EMI Stress Test";
-                StopRecording();
-            }
-        }
-
-        private void RunLoopbackButtonPress()
-        {
-            if (RunStopLoopbackContent == "Run EMI Stress Test")
-            {
-                RunStopLoopbackContent = "Stop EMI Stress Test";
-                if (SerialPort != null && SerialPort.IsOpen)
-                {
-                    try
-                    {
-                        var thread = new Thread(RunThis);
-                        //thread.Start("echo Allspark | sudo -S /home/allspark/beta_board_bringup_test/overlay_test/flyingpigs.sh");
-                        thread.Start("echo Allspark | sudo -S /home/allspark/intertek.sh");
-                    }
-                    catch (Exception e) 
-                    {
-                        MessageBox.Show(e.Message); 
-                        Debug.WriteLine(e.Message); 
-                    }
-                }
-                else
-                    MessageBox.Show("Invalid Session");
-            }
-            else
-            {
-                //SerialPort.WriteLine("sudo pkill vdma-out");
-                //SerialPort.WriteLine("sudo pkill loopback");
-                //SerialPort.WriteLine("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
-                Thread.Sleep(1000);
-
-                //Session.RunCommand("echo Allspark | sudo -S killall -9 vdma-out");
-                //Session.RunCommand("echo Allspark | sudo -S killall -9 loopback");
-                RunStopLoopbackContent = "Run EMI Stress Test";
-            }
-        }
-
-        //private void PlotButtonPress()
-        //{
-
-        //    for (int i = 0; i < _seconds.Count(); i++)
-        //    {
-        //        Points.Add(new Point(_seconds[i], _temps[i]));
-        //    }
-        //    //_timer = new DispatcherTimer();
-        //    //_timer.Tick += Timer_Tick;
-        //    //_timer.Interval = TimeSpan.FromMilliseconds(500);
-        //    //_timer.Start();
-        //    IsPlottable = true;
-        //}
-
-        private void ClearLastErrorButtonPress()
-        {
-            if (CurrentErrorStatus)
-                IsLastErrorCleared = true;
-        }
-
         private void RunThis(object? cmd)
         {
             try
@@ -640,135 +516,571 @@ namespace SshPoc
             }
         }
 
+
+        #endregion // Serial Communication
+
+        #region SSH Communication
+        
         /// <summary>
-        /// Creates and starts a thread to write user command to remote SSH terminal
+        /// Connects/disconnects with a remote client over SSH
         /// </summary>
-        /// <param name="cmd">user command as string</param>
-        private void StartRecording(string cmd)
+        private void ConnectAllsparkButtonPress()
         {
+            // To establish a connection
+            if (ConnectAllsparkButtonContent == "Connect")
+            {
+                //TODO: add user input validation
+                
+                ConnectGpuBurnSession();
+                ConnectAsappSession();
+                ConnectWiFiPingSession();
+                ConnectLatencySessionOnAllspark();
+
+                // Changes button label 
+                ConnectAllsparkButtonContent = (GpuBurnSession.ConnStatus
+                                                && AsappSession.ConnStatus
+                                                && WifiPingSession.ConnStatus
+                                                && LatencySessionOnAllspark.ConnStatus) ? "Disconnect" : "Connect";
+            }
+            // To disconnect from a remote client
+            else
+            {
+                Debug.WriteLine($"Disconnected GPU Test Session");
+                Debug.WriteLine($"Disconnected ASAPP Test Session");
+                Debug.WriteLine($"Disconnected Wi-Fi Flood Session");
+                Debug.WriteLine($"Disconnected Allspark Latency Session");
+
+                GpuBurnSession?.DisconnectSsh();
+                GpuBurnSession?.Dispose();
+
+                AsappSession?.DisconnectSsh();
+                AsappSession?.Dispose();
+
+                WifiPingSession?.DisconnectSsh();
+                WifiPingSession?.Dispose();
+
+                LatencySessionOnAllspark?.DisconnectSsh();
+                LatencySessionOnAllspark?.Dispose();
+
+                ConnectAllsparkButtonContent = "Connect";
+            }
+        }
+
+        /// <summary>
+        /// Connects/disconnects with a remote client over SSH
+        /// </summary>
+        private void ConnectJetsonButtonPress()
+        {
+            // To establish a connection
+            if (ConnectJetsonButtonContent == "Connect")
+            {
+                //TODO: add user input validation
+
+                ConnectLatencySessionOnJetson();
+                ConnectJetsonButtonContent = "Disconnect";
+            }
+            // To disconnect from a remote client
+            else
+            {
+                Debug.WriteLine($"Disconnecting {LatencySessionOnJetson?.IpAddress}");
+
+                LatencySessionOnJetson?.DisconnectSsh();
+                LatencySessionOnJetson?.Dispose();
+                
+                ConnectJetsonButtonContent = "Connect";
+                
+                Debug.WriteLine($"Disconnected {LatencySessionOnJetson?.IpAddress}");
+            }
+        }
+
+        private bool ConnectGpuBurnSession()
+        {
+            if (GpuBurnSession == null || GpuBurnSession.DisposedValue)
+                GpuBurnSession = new SshSessionModel(AllsparkHostIpAddress, AllsparkUsername, AllsparkPassword, 5003);
+            else
+            {
+                GpuBurnSession.Username = AllsparkUsername;
+                GpuBurnSession.Password = AllsparkPassword;
+                GpuBurnSession.IpAddress = AllsparkHostIpAddress;
+                GpuBurnSession.PortNum = 5003;
+            }
+
             try
             {
-                WriteStream(cmd);
+                Debug.WriteLine($"Connecting {GpuBurnSession.IpAddress} for {nameof(GpuBurnSession)}");
 
-                // Start a background thread that will read in the data from the Pyng terminal
-                ThreadStart threadStart = ReceiveData;
-                Thread thread = new Thread(threadStart) { IsBackground = true };
-                thread.Start();
-                _keepReading = true;
-            }
-            catch (Exception e)
-            {
-                // TODO
-                Debug.WriteLine(e);
-            }
-            finally
-            {
-                _isRecording = false;
-            }
-        }
+                GpuBurnSession.ConnectSsh(SshSessionModel.TestType.GpuBurn);
 
-        /// <summary>
-        /// Closes thread that writes to remote SSH terminal
-        /// </summary>
-        private void StopRecording()
-        {
-            _shellStream.Flush();
-            _sshWriter.Flush();
-            _sshReader.DiscardBufferedData();
-            _sshStreamedResult.Clear();
-            _fileWriter.Flush();
-            _fileWriter.Close();
-
-            _sshReader.BaseStream.Close();
-
-            _isRecording = false;
-            _keepReading = false;
-        }
-
-        /// <summary>
-        /// Starts writing user command to remote SSH terminal
-        /// </summary>
-        /// <param name="cmd">user command as string</param>
-        private void WriteStream(string cmd)
-        {
-            _sshWriter.WriteLine(cmd);
-            while (_shellStream.Length == 0)
-            {
-                Thread.Sleep(500);
-            }
-        }
-
-        /// <summary>
-        /// Contains thread to received and parse data from remote SSH terminal
-        /// </summary>
-        private void ReceiveData()
-        {
-            _sshStreamedResult = new StringBuilder();
-
-            // keep receiving data until stream active, every 200 ms
-            while (_keepReading)
-            {
-                try
+                // if connection established
+                if (GpuBurnSession.GetConnectionStatus())
                 {
-                    // if reader object valid 
-                    if (_sshReader != null)
+                    //Debug.WriteLine(Session.StartRecording("ls -l"));
+                    Debug.WriteLine($"Connected {GpuBurnSession.IpAddress} for {nameof(GpuBurnSession)}");
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+            // Failed to connect 
+            catch (Exception ex)
+            {
+                GpuBurnSession?.DisconnectSsh();
+                GpuBurnSession?.Dispose();
+
+                MessageBox.Show($"Failed to connect to {AllsparkUsername}@{AllsparkHostIpAddress}");
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private bool ConnectAsappSession()
+        {
+            if (AsappSession == null || AsappSession.DisposedValue)
+                AsappSession = new SshSessionModel(AllsparkHostIpAddress, AllsparkUsername, AllsparkPassword, 5003);
+            else
+            {
+                AsappSession.Username = AllsparkUsername;
+                AsappSession.Password = AllsparkPassword;
+                AsappSession.IpAddress = AllsparkHostIpAddress;
+                AsappSession.PortNum = 5003;
+            }
+
+            try
+            {
+                Debug.WriteLine($"Connecting {AsappSession.IpAddress} for {nameof(AsappSession)}");
+
+                AsappSession.ConnectSsh(SshSessionModel.TestType.Asapp);
+
+                // if connection established
+                if (AsappSession.GetConnectionStatus())
+                {
+                    //Debug.WriteLine(Session.StartRecording("ls -l"));
+                    Debug.WriteLine($"Connected {AsappSession.IpAddress} for {nameof(AsappSession)}");
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+            // Failed to connect 
+            catch (Exception ex)
+            {
+                AsappSession?.DisconnectSsh();
+                AsappSession?.Dispose();
+
+                MessageBox.Show($"Failed to connect to {AllsparkUsername}@{AllsparkHostIpAddress}");
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private bool ConnectWiFiPingSession()
+        {
+            if (WifiPingSession == null || WifiPingSession.DisposedValue)
+                WifiPingSession = new SshSessionModel(AllsparkHostIpAddress, AllsparkUsername, AllsparkPassword, 5003);
+            else
+            {
+                WifiPingSession.Username = AllsparkUsername;
+                WifiPingSession.Password = AllsparkPassword;
+                WifiPingSession.IpAddress = AllsparkHostIpAddress;
+                WifiPingSession.PortNum = 5003;
+            }
+
+            try
+            {
+                Debug.WriteLine($"Connecting {WifiPingSession.IpAddress} for {nameof(WifiPingSession)}");
+
+                WifiPingSession.ConnectSsh(SshSessionModel.TestType.WiFiFlooding);
+
+                // if connection established
+                if (WifiPingSession.GetConnectionStatus())
+                {
+                    //Debug.WriteLine(Session.StartRecording("ls -l"));
+                    Debug.WriteLine($"Connected {WifiPingSession.IpAddress} for {nameof(WifiPingSession)}");
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+            // Failed to connect 
+            catch (Exception ex)
+            {
+                WifiPingSession?.DisconnectSsh();
+                WifiPingSession?.Dispose();
+
+                MessageBox.Show($"Failed to connect to {AllsparkUsername}@{AllsparkHostIpAddress}");
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private bool ConnectLatencySessionOnAllspark()
+        {
+            if (LatencySessionOnAllspark == null || LatencySessionOnAllspark.DisposedValue)
+                LatencySessionOnAllspark = new SshSessionModel(AllsparkHostIpAddress, AllsparkUsername, AllsparkPassword, 5003);
+            else
+            {
+                LatencySessionOnAllspark.Username = AllsparkUsername;
+                LatencySessionOnAllspark.Password = AllsparkPassword;
+                LatencySessionOnAllspark.IpAddress = AllsparkHostIpAddress;
+                LatencySessionOnAllspark.PortNum = 5003;
+            }
+
+            try
+            {
+                Debug.WriteLine($"Connecting {LatencySessionOnAllspark.IpAddress} for {nameof(LatencySessionOnAllspark)}");
+
+                LatencySessionOnAllspark.ConnectSsh(SshSessionModel.TestType.LatencyOnAllspark);
+
+                // if connection established
+                if (LatencySessionOnAllspark.GetConnectionStatus())
+                {
+                    //Debug.WriteLine(Session.StartRecording("ls -l"));
+                    Debug.WriteLine($"Connected {LatencySessionOnAllspark.IpAddress} for {nameof(LatencySessionOnAllspark)}");
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+            // Failed to connect 
+            catch (Exception ex)
+            {
+                LatencySessionOnAllspark?.DisconnectSsh();
+                LatencySessionOnAllspark?.Dispose();
+
+                MessageBox.Show($"Failed to connect to {AllsparkUsername}@{AllsparkHostIpAddress}");
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private bool ConnectLatencySessionOnJetson()
+        {
+            if (LatencySessionOnJetson == null || LatencySessionOnJetson.DisposedValue)
+                LatencySessionOnJetson = new SshSessionModel(JetsonHostIpAddress, JetsonUsername, JetsonPassword, 22);
+            else
+            {
+                LatencySessionOnJetson.Username = JetsonUsername;
+                LatencySessionOnJetson.Password = JetsonPassword;
+                LatencySessionOnJetson.IpAddress = JetsonHostIpAddress;
+                LatencySessionOnJetson.PortNum = 22;
+            }
+
+            try
+            {
+                Debug.WriteLine($"Connecting {LatencySessionOnJetson.IpAddress} for {nameof(LatencySessionOnJetson)}");
+
+                LatencySessionOnJetson.ConnectSsh(SshSessionModel.TestType.LatencyOnJetson);
+
+                // if connection established
+                if (LatencySessionOnJetson.GetConnectionStatus())
+                {
+                    //Debug.WriteLine(Session.StartRecording("ls -l"));
+                    Debug.WriteLine($"Connected {LatencySessionOnJetson.IpAddress} for {nameof(LatencySessionOnJetson)}");
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+            // Failed to connect 
+            catch (Exception ex)
+            {
+                LatencySessionOnJetson?.DisconnectSsh();
+                LatencySessionOnJetson?.Dispose();
+
+                MessageBox.Show($"Failed to connect to {JetsonUsername}@{JetsonHostIpAddress}");
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+        }
+        
+        private  void RunWiFiFloodTestButtonPress()
+        {
+            if (RunStopWiFiFloodingTestContent == "Run Wi-Fi Flooding Test")
+            {
+                RunStopWiFiFloodingTestContent = "Stop Wi-Fi Flooding Test";
+                if (WifiPingSession != null && WifiPingSession.GetConnectionStatus())
+                {
+                    try
                     {
-                        string line;
+                        // reopen the shell stream if already closed
+                        if (!WifiPingSession.ShellStream.CanWrite)
+                            WifiPingSession.CreateShellStream(SshSessionModel.TestType.WiFiFlooding);
 
-                        // while remote SSH terminal responds with a non-null string
-                        while ((line = _sshReader.ReadLine()) != null)
+                        // changes status indicators
+                        WifiPingSession.CurrentErrStatus = true;
+                        WifiPingSession.IsLastErrorCleared = true;
+
+                        WifiPingSession.IsRecording = true;
+                        while (WifiPingSession.IsRecording)
                         {
-                            _sshStreamedResult.AppendLine("\n" + line);
-                            Debug.WriteLine(line);
-                            _fileWriter.WriteLine(line);
-
-                            if (line.Contains("Value"))
-                            {
-                                Temperature = double.Parse(line.Substring(line.IndexOf("is ") + 3, 7));
-
-                                Debug.Write($"{Temperature}");
-
-                                CurrentErrorStatus = (Temperature <= _threshold);
-                            }
-                        }
-
-                        // Process data received from remote SSH terminal in this session
-                        if (!string.IsNullOrEmpty(_sshStreamedResult.ToString()))
-                        {
-                            // TODO - Parse data at this point
-                            Debug.WriteLine(_sshStreamedResult.ToString());
+                            //WifiPingSession.StartRecording($"echo {AllsparkPassword} | sudo ping -f -t 200 192.168.1.1", SshSessionModel.TestType.WiFiFlooding);
+                            WifiPingSession.StartRecording($"ping -i 0.2 -s 65507 192.168.1.1", SshSessionModel.TestType.WiFiFlooding);
+                            Thread.Sleep(100);
                         }
                     }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Debug.WriteLine(e.Message);
+                        WifiPingSession.IsRecording = false;
+                    }
                 }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-
-                Thread.Sleep(200);
+                else
+                    MessageBox.Show("Invalid Session");
+            }
+            else
+            {
+                WifiPingSession?.StopRecording();
+                RunStopWiFiFloodingTestContent = "Run Wi-Fi Flooding Test";
             }
         }
 
-        /// <summary>
-        /// Creates instances of shell stream, stream reader and writer
-        /// </summary>
-        private void CreateShellStream()
+        private  void RunAsappTestButtonPress()
         {
-            _shellStream = Session?.SshClient.CreateShellStream(terminalName: "Terminal",
-                                    columns: 80, rows: 60, width: 800, height: 600, bufferSize: 65536);
+            if (RunStopAsappTestContent == "Run ASAPP Test")
+            {
+                RunStopAsappTestContent = "Stop ASAPP Test";
+                if (AsappSession != null && AsappSession.GetConnectionStatus())
+                {
+                    try
+                    {
+                        // reopen the shell stream if already closed
+                        if (!AsappSession.ShellStream.CanWrite)
+                            AsappSession.CreateShellStream(SshSessionModel.TestType.Asapp);
 
-            _sshReader = new StreamReader(_shellStream, Encoding.UTF8,
-                detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
+                        // changes status indicators
+                        AsappSession.CurrentErrStatus = true;
+                        AsappSession.IsLastErrorCleared = true;
 
-            _sshWriter = new StreamWriter(_shellStream) { AutoFlush = true };
-
-            var filename = @"C:\Temp\RemoteHealth_Service.log";
-            _fileWriter = new StreamWriter(filename, append:File.Exists(filename));
+                        AsappSession.IsRecording = true;
+                        while (AsappSession.IsRecording)
+                        {
+                            AsappSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/asapp -O -M -T", SshSessionModel.TestType.Asapp);
+                            Thread.Sleep(100);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Debug.WriteLine(e.Message);
+                        AsappSession.IsRecording = false;
+                    }
+                }
+                else
+                    MessageBox.Show("Invalid Session");
+            }
+            else
+            {
+                AsappSession?.StopRecording();
+                RunStopAsappTestContent = "Run ASAPP Test";
+            }
         }
 
-        #endregion // SSH Communication
+        private  void RunGpuBurnTestButtonPress()
+        {
+            if (RunStopGpuBurnTestContent == "Run GPU Burn Test")
+            {
+                RunStopGpuBurnTestContent = "Stop GPU Burn Test";
+                if (GpuBurnSession != null && GpuBurnSession.GetConnectionStatus())
+                {
+                    try
+                    {
+                        // reopen the shell stream if already closed
+                        if (!GpuBurnSession.ShellStream.CanWrite)
+                            GpuBurnSession.CreateShellStream(SshSessionModel.TestType.GpuBurn);
 
-        #endregion // Private Methods
+                        // changes status indicators
+                        GpuBurnSession.CurrentErrStatus = true;
+                        GpuBurnSession.IsLastErrorCleared = true;
+
+                        GpuBurnSession.IsRecording = true;
+                        while (GpuBurnSession.IsRecording)
+                        {
+                            GpuBurnSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/matrixMul", SshSessionModel.TestType.GpuBurn);
+                            Thread.Sleep(100);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Debug.WriteLine(e.Message);
+                        GpuBurnSession.IsRecording = false;
+                    }
+                }
+                else
+                    MessageBox.Show("Invalid Session");
+            }
+            else
+            {
+                GpuBurnSession?.StopRecording();
+                RunStopGpuBurnTestContent = "Run GPU Burn Test";
+            }
+        }
+
+        private void ClearLastErrorButtonPressGpu() => GpuBurnSession?.ClearLastErrorButtonPress();
+        
+        private void ClearLastErrorButtonPressAsapp() => AsappSession?.ClearLastErrorButtonPress();
+        
+        private void ClearLastErrorButtonPressWiFi() => WifiPingSession?.ClearLastErrorButtonPress();
+
+        private void ClearLastErrorButtonPressLatency() => LatencySessionOnJetson?.ClearLastErrorButtonPress();
+        
+        private  void RunAnalyzerButtonPress()
+        {
+            if (RunStopAnalyzerContent == "Run Counter Analyzer")
+            {
+                RunStopAnalyzerContent = "Stop Counter Analyzer";
+                if (LatencySessionOnJetson != null && LatencySessionOnJetson.GetConnectionStatus())
+                {
+                    try
+                    {
+                        // reopen the shell stream if already closed
+                        if (!LatencySessionOnJetson.ShellStream.CanWrite)
+                            LatencySessionOnJetson.CreateShellStream(SshSessionModel.TestType.LatencyOnJetson);
+
+                        // changes status indicators
+                        LatencySessionOnJetson.CurrentErrStatus = true;
+                        LatencySessionOnJetson.IsLastErrorCleared = true;
+
+                        LatencySessionOnJetson.IsRecording = true;
+                        while (LatencySessionOnJetson.IsRecording)
+                        {
+                            LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
+                            Thread.Sleep(1000);
+                            LatencySessionOnJetson.StartRecording($"julia --project ./counters_analyzer.jl /dev/video0 -s 1", SshSessionModel.TestType.LatencyOnJetson);
+                            Thread.Sleep(100);
+                            Thread.CurrentThread.IsBackground = true;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Debug.WriteLine(e.Message);
+                        LatencySessionOnJetson.IsRecording = false;
+                    }
+                }
+                else
+                    MessageBox.Show("Invalid Session");
+            }
+            else
+            {
+                LatencySessionOnJetson.StopRecording();
+                RunStopAnalyzerContent = "Run Counter Analyzer";
+            }
+        }
+
+        private  void RunInjectorButtonPress()
+        {
+            if (RunStopInjectorContent == "Run Counter Injector")
+            {
+                RunStopInjectorContent = "Stop Counter Injector";
+                if (LatencySessionOnJetson != null && LatencySessionOnJetson.GetConnectionStatus())
+                {
+                    try
+                    {
+                        // changes status indicators
+                        LatencySessionOnJetson.CurrentErrStatus = true;
+                        LatencySessionOnJetson.IsLastErrorCleared = true;
+
+                        LatencySessionOnJetson.IsRecording = true;
+                        while (LatencySessionOnJetson.IsRecording)
+                        {
+                            LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
+                            Thread.Sleep(1000);
+                            LatencySessionOnJetson.StartRecording($"export DISPLAY=:1", SshSessionModel.TestType.LatencyOnJetson);
+                            Thread.Sleep(1000);
+                            LatencySessionOnJetson.StartRecording($"julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &", SshSessionModel.TestType.LatencyOnJetson);
+                            Thread.Sleep(10000);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Debug.WriteLine(e.Message);
+                        LatencySessionOnJetson.IsRecording = false;
+                    }
+                }
+                else
+                    MessageBox.Show("Invalid Session");
+            }
+            else
+            {
+                RunStopInjectorContent = "Run Counter Injector";
+                LatencySessionOnJetson.StopRecording();
+            }
+        }
+
+        private  void RunLoopbackButtonPress()
+        {
+            if (RunStopLoopbackContent == "Run Loopback")
+            {
+                RunStopLoopbackContent = "Stop Loopback";
+                if (LatencySessionOnAllspark != null && LatencySessionOnAllspark.GetConnectionStatus())
+                {
+                    try
+                    {
+                        // changes status indicators
+                        LatencySessionOnAllspark.CurrentErrStatus = true;
+                        LatencySessionOnAllspark.IsLastErrorCleared = true;
+
+                        LatencySessionOnAllspark.IsRecording = true;
+                        while (LatencySessionOnAllspark.IsRecording)
+                        {
+                            Thread.CurrentThread.IsBackground = true;
+                            // Loopback on ALLSPARK
+                            LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1", SshSessionModel.TestType.LatencyOnAllspark);
+                            //Thread.Sleep(2000);
+                            LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &", SshSessionModel.TestType.LatencyOnAllspark);
+                            //Thread.Sleep(3000);
+                            LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/new-loopback/vdma-in-loopback", SshSessionModel.TestType.LatencyOnAllspark);
+                            Thread.Sleep(1000);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Debug.WriteLine(e.Message);
+                        LatencySessionOnAllspark.IsRecording = false;
+                    }
+                }
+                else
+                    MessageBox.Show("Invalid Session");
+            }
+            else
+            {
+                if (LatencySessionOnAllspark != null && LatencySessionOnAllspark.GetConnectionStatus())
+                {
+                    try
+                    {
+                        LatencySessionOnAllspark.StartRecording("sudo pkill -9 vdma-out", SshSessionModel.TestType.LatencyOnAllspark);
+                        LatencySessionOnAllspark.StartRecording("sudo pkill -9 vdma-in-loopback", SshSessionModel.TestType.LatencyOnAllspark);
+                        LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2", SshSessionModel.TestType.LatencyOnAllspark);
+                        LatencySessionOnAllspark?.StopRecording();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                        Debug.WriteLine(ex.Message);
+                    }
+
+                    finally
+                    {
+                        Thread.Sleep(1000);
+
+                        RunStopLoopbackContent = "Run Loopback";
+                    }
+                }
+                else
+                    RunStopLoopbackContent = "Run Loopback";
+            }
+        }
+        
+        #endregion // SSH Communication
 
         #region INotifyPropertyChanged Implementation
 
