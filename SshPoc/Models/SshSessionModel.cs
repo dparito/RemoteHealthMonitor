@@ -591,10 +591,12 @@ namespace SshPoc
                             _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
                             WriteToLogFile(line, isForAuditLog: false);
-
-                            if (line.Contains("ping"))
+                            
+                            //65515 bytes from 192.168.1.1: icmp_seq = 11 ttl = 64 time = 23.6 ms
+                            if (line.Contains("time"))
                             {
-                                CurrentErrStatus = false;
+                                var result = int.Parse(line.Substring(line.IndexOf("time") + 6, 3));
+                                CurrentErrStatus = result < 100;
                                 IsLastErrorCleared &= CurrentErrStatus;
 
                                 if (!CurrentErrStatus)

@@ -17,13 +17,13 @@ class Program
         var filepath = @"../../../../SshPoc/Utils/test_limits_config.yaml";
         var testLimits = new TestLimits
         {
-            GpuBurn = new GpuBurn { CommandToRun = "echo Allspark | sudo -S /home/allspark/ServiceApps/gpuBurn.sh", 
+            GpuBurn = new GpuBurn { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/gpuBurn.sh", 
                                     MatrixMulResult = "FAIL" },
-            Asapp = new Asapp { CommandToRun = "echo Allspark | sudo -S /home/allspark/serviceApps/asapp -O -M -T",
+            Asapp = new Asapp { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T",
                                 MaxTemp = 60 },
             WifiFlooding = new WifiFlooding { CommandToRun = "ping -i 0.2 -s 65507 192.168.1.1",
                                               TimeoutinMs = 100 },
-            Latency = new Latency { CommandToRun = "echo Allspark | sudo -S /home/allspark/ServiceApps/loopback.sh",
+            Latency = new Latency { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/loopback.sh",
                                     MaxFrameLatency = 3 },
         };
 

@@ -828,7 +828,6 @@ namespace SshPoc
                         WifiPingSession.IsRecording = true;
                         while (WifiPingSession.IsRecording)
                         {
-                            //WifiPingSession.StartRecording("ping -i 0.2 -s 65507 192.168.1.1", SshSessionModel.TestType.WiFiFlooding);
                             WifiPingSession.StartRecording(_configParser.TestLimits.WifiFlooding.CommandToRun, SshSessionModel.TestType.WiFiFlooding);
                             Thread.Sleep(100);
                         }
