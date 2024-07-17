@@ -528,7 +528,7 @@ namespace SshPoc
                             if (line.Contains("Value is"))
                             {
                                 _asappTempMeasureCurrent = float.Parse(line.Substring(line.Length-8, 7));
-                                CurrentErrStatus = _asappTempMeasureCurrent > _configParser.TestLimits.Asapp.MaxTemp;
+                                CurrentErrStatus = _asappTempMeasureCurrent > (float)_configParser.Limits.Asapp.TestLimit;
                                 IsLastErrorCleared &= CurrentErrStatus;
                             }
                         }
@@ -672,7 +672,7 @@ namespace SshPoc
                             if (line.Contains("Value"))
                             {
                                 var latency = int.Parse(line.Substring(1));
-                                CurrentErrStatus = latency > _configParser.TestLimits.Latency.MaxFrameLatency;
+                                CurrentErrStatus = latency > (int)_configParser.Limits.Latency.MaxFrameLatency;
                                 IsLastErrorCleared &= CurrentErrStatus;
                             }
                         }

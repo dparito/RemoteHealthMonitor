@@ -318,7 +318,8 @@ namespace SshPoc
 
         #region GPU Burn Test Properties
 
-        public SshSessionModel? GpuBurnSession { get; private set; }
+        //public SshSessionModel? GpuBurnSession { get; private set; }
+        public GpuBurnTestSessionModel? GpuBurnSession { get; private set; }
 
         public string RunStopGpuBurnTestContent
         {
