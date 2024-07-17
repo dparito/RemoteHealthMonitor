@@ -3,6 +3,7 @@ gpuBurn:
   commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/gpuBurn.sh
 asapp:
   maxTemp: 60
+  deltaTempPerMeasurement: 0.3
   commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T
 wifiFlooding:
   timeoutinMs: 100
