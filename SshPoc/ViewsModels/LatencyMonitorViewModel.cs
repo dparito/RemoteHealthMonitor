@@ -18,6 +18,7 @@ namespace SshPoc
         #region Private Members
 
         // Configuration
+        private ConfigParser _configParser;
         private string _allsparkUsername;
         private string _allsparkPassword;
         private string _allsparkHostIpAddr;
@@ -57,6 +58,7 @@ namespace SshPoc
         public LatencyMonitorViewModel()
         {
             // Configuration
+            _configParser = new ConfigParser();
             AllsparkUsername = "allspark";
             AllsparkHostIpAddress = string.Empty;
             AllsparkPassword = "Allspark";
@@ -797,7 +799,15 @@ namespace SshPoc
                 return false;
             }
         }
-        
+
+        private void ClearLastErrorButtonPressGpu() => GpuBurnSession?.ClearLastErrorButtonPress();
+
+        private void ClearLastErrorButtonPressAsapp() => AsappSession?.ClearLastErrorButtonPress();
+
+        private void ClearLastErrorButtonPressWiFi() => WifiPingSession?.ClearLastErrorButtonPress();
+
+        private void ClearLastErrorButtonPressLatency() => LatencySessionOnJetson?.ClearLastErrorButtonPress();
+
         private  void RunWiFiFloodTestButtonPress()
         {
             if (RunStopWiFiFloodingTestContent == "Run Wi-Fi Flooding Test")
@@ -818,8 +828,8 @@ namespace SshPoc
                         WifiPingSession.IsRecording = true;
                         while (WifiPingSession.IsRecording)
                         {
-                            //WifiPingSession.StartRecording($"echo {AllsparkPassword} | sudo ping -f -t 200 192.168.1.1", SshSessionModel.TestType.WiFiFlooding);
-                            WifiPingSession.StartRecording($"ping -i 0.2 -s 65507 192.168.1.1", SshSessionModel.TestType.WiFiFlooding);
+                            //WifiPingSession.StartRecording("ping -i 0.2 -s 65507 192.168.1.1", SshSessionModel.TestType.WiFiFlooding);
+                            WifiPingSession.StartRecording(_configParser.TestLimits.WifiFlooding.CommandToRun, SshSessionModel.TestType.WiFiFlooding);
                             Thread.Sleep(100);
                         }
                     }
@@ -860,7 +870,8 @@ namespace SshPoc
                         AsappSession.IsRecording = true;
                         while (AsappSession.IsRecording)
                         {
-                            AsappSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/asapp -O -M -T", SshSessionModel.TestType.Asapp);
+                            //AsappSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/asapp -O -M -T", SshSessionModel.TestType.Asapp);
+                            AsappSession.StartRecording(_configParser.TestLimits.Asapp.CommandToRun, SshSessionModel.TestType.Asapp);
                             Thread.Sleep(100);
                         }
                     }
@@ -901,7 +912,8 @@ namespace SshPoc
                         GpuBurnSession.IsRecording = true;
                         while (GpuBurnSession.IsRecording)
                         {
-                            GpuBurnSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/matrixMul", SshSessionModel.TestType.GpuBurn);
+                            //GpuBurnSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/matrixMul", SshSessionModel.TestType.GpuBurn);
+                            GpuBurnSession.StartRecording(_configParser.TestLimits.GpuBurn.CommandToRun, SshSessionModel.TestType.GpuBurn);
                             Thread.Sleep(100);
                         }
                     }
@@ -921,14 +933,6 @@ namespace SshPoc
                 RunStopGpuBurnTestContent = "Run GPU Burn Test";
             }
         }
-
-        private void ClearLastErrorButtonPressGpu() => GpuBurnSession?.ClearLastErrorButtonPress();
-        
-        private void ClearLastErrorButtonPressAsapp() => AsappSession?.ClearLastErrorButtonPress();
-        
-        private void ClearLastErrorButtonPressWiFi() => WifiPingSession?.ClearLastErrorButtonPress();
-
-        private void ClearLastErrorButtonPressLatency() => LatencySessionOnJetson?.ClearLastErrorButtonPress();
         
         private  void RunAnalyzerButtonPress()
         {
@@ -1033,11 +1037,12 @@ namespace SshPoc
                         {
                             Thread.CurrentThread.IsBackground = true;
                             // Loopback on ALLSPARK
-                            LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1", SshSessionModel.TestType.LatencyOnAllspark);
+                            //LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1", SshSessionModel.TestType.LatencyOnAllspark);
                             //Thread.Sleep(2000);
-                            LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &", SshSessionModel.TestType.LatencyOnAllspark);
+                            //LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &", SshSessionModel.TestType.LatencyOnAllspark);
                             //Thread.Sleep(3000);
-                            LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/new-loopback/vdma-in-loopback", SshSessionModel.TestType.LatencyOnAllspark);
+                            //LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/new-loopback/vdma-in-loopback", SshSessionModel.TestType.LatencyOnAllspark);
+                            LatencySessionOnAllspark.StartRecording(_configParser.TestLimits.Latency.CommandToRun, SshSessionModel.TestType.LatencyOnAllspark);
                             Thread.Sleep(1000);
                         }
                     }

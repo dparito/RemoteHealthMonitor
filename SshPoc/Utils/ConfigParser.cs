@@ -12,8 +12,8 @@ namespace SshPoc
 {
     public class ConfigParser
     {
-        private string _filepath = @"C:\Users\30793978\source\repos\RemoteHealthMonitor\SshPoc\Utils\test_limits_config.yaml";
-        
+        private string _filepath = @"../../../../SshPoc/Utils/test_limits_config.yaml";
+
         public ConfigParser()
         {
             string yaml = File.ReadAllText(_filepath);
@@ -22,9 +22,13 @@ namespace SshPoc
                 .Build();
             TestLimits = deserializer.Deserialize<TestLimits>(yaml);
 
+            Debug.WriteLine($"GPU Burn.Command = {TestLimits.GpuBurn.CommandToRun}");
             Debug.WriteLine($"GPU Burn.Max Utilization = {TestLimits.GpuBurn.MatrixMulResult}");
+            Debug.WriteLine($"ASAPP.Command = {TestLimits.Asapp.CommandToRun}");
             Debug.WriteLine($"ASAPP.Max Temperature = {TestLimits.Asapp.MaxTemp}");
-            Debug.WriteLine($"WiFi Flood.Timeout Phrase = {TestLimits.WifiFlooding.TimeoutPhrase}");
+            Debug.WriteLine($"WiFi Flood.Command = {TestLimits.WifiFlooding.CommandToRun}");
+            Debug.WriteLine($"WiFi Flood.TimeoutinMs= {TestLimits.WifiFlooding.TimeoutinMs}");
+            Debug.WriteLine($"Latency.Command= {TestLimits.Latency.CommandToRun}");
             Debug.WriteLine($"Latency.Max Frame Latency = {TestLimits.Latency.MaxFrameLatency}");
         }
 
@@ -42,21 +46,25 @@ namespace SshPoc
     public class GpuBurn
     {
         public string MatrixMulResult { get; set; }
+        public string CommandToRun { get; set; }
     }
 
     public class Asapp
     {
         public int MaxTemp { get; set; }
+        public string CommandToRun { get; set; }
     }
 
     public class WifiFlooding
     {
-        public string TimeoutPhrase { get; set; }
+        public int TimeoutinMs { get; set; }
+        public string CommandToRun { get; set; }
     }
 
     public class Latency
     {
         public int MaxFrameLatency { get; set; }
+        public string CommandToRun { get; set; }
     }
 
 }

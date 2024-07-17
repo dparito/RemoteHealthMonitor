@@ -31,7 +31,8 @@ namespace SshPoc
         private StreamReader? _sshReader;
         private StreamWriter? _sshWriter;
         private StringBuilder? _sshStreamedResult;
-        private StreamWriter? _fileWriter;
+        private StreamWriter? _serviceLogFileWriter;
+        private StreamWriter? _auditLogFileWriter;
         private ConfigParser _configParser;
         private float _asappTempMeasureCurrent;
 
@@ -347,9 +348,12 @@ namespace SshPoc
             _sshWriter?.Flush();
             _sshReader?.DiscardBufferedData();
             _sshStreamedResult?.Clear();
-            _fileWriter?.Flush();
-            _fileWriter?.Close();
-            _fileWriter?.Dispose();
+            _serviceLogFileWriter?.Flush();
+            _serviceLogFileWriter?.Close();
+            _serviceLogFileWriter?.Dispose();
+            _auditLogFileWriter?.Flush();
+            _auditLogFileWriter?.Close();
+            _auditLogFileWriter?.Dispose();
 
             _sshReader?.BaseStream.Close();
 
@@ -371,30 +375,38 @@ namespace SshPoc
 
             _sshWriter = new StreamWriter(ShellStream) { AutoFlush = true };
 
-            var filename = @"C:\Temp\";
+            //var filename = @"C:\Temp\";
+            var serviceLogFilename = "";
+            var auditLogFilename = "";
             switch (test)
             {
                 case TestType.GpuBurn:
-                    filename += "GpuBurnTest.log";
+                    serviceLogFilename = @"GpuBurnTest_service.log";
+                    auditLogFilename = @"GpuBurnTest_audit.log";
                     break;
 
                 case TestType.Asapp:
-                    filename += "AsappTest.log";
+                    serviceLogFilename = @"AsappTest_service.log";
+                    auditLogFilename = @"AsappTest_audit.log";
                     break;
 
                 case TestType.WiFiFlooding:
-                    filename += "WiFiFloodingTest.log";
+                    serviceLogFilename = @"WiFiFloodingTest_service.log";
+                    auditLogFilename = @"WiFiFloodingTest_audit.log";
                     break;
 
                 case TestType.LatencyOnAllspark:
-                    filename += "LatencyTest_Allspark.log";
+                    serviceLogFilename = @"LatencyTest_Allspark_service.log";
+                    auditLogFilename = @"LatencyTest_Allspark_audit.log";
                     break;
                 case TestType.LatencyOnJetson:
-                    filename += "LatencyTest_Jetson.log";
+                    serviceLogFilename = @"LatencyTest_Jetson_service.log";
+                    auditLogFilename = @"LatencyTest_Jetson_audit.log";
                     break;
             }
             
-            _fileWriter = new StreamWriter(filename, append: File.Exists(filename));
+            _serviceLogFileWriter = new StreamWriter(serviceLogFilename, append: File.Exists(serviceLogFilename));
+            _auditLogFileWriter = new StreamWriter(auditLogFilename, append: File.Exists(auditLogFilename));
         }
 
         public void ClearLastErrorButtonPress()
@@ -474,13 +486,16 @@ namespace SshPoc
                         {
                             _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
-                            _fileWriter.WriteLine(line);
+                            WriteToLogFile(line);
 
                             if (line.Contains("Result = "))
                             {
                                 var result = line.Substring(line.Length - 4, 4);
                                 CurrentErrStatus = result == "PASS";
                                 IsLastErrorCleared &= CurrentErrStatus;
+
+                                if (!CurrentErrStatus)
+                                    WriteToLogFile(line, isForAuditLog: true);
                             }
                         }
 
@@ -523,13 +538,16 @@ namespace SshPoc
                         {
                             _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
-                            _fileWriter.WriteLine(line);
+                            WriteToLogFile(line, isForAuditLog: false);
 
                             if (line.Contains("Value is"))
                             {
                                 _asappTempMeasureCurrent = float.Parse(line.Substring(line.Length-8, 7));
                                 CurrentErrStatus = _asappTempMeasureCurrent > _configParser.TestLimits.Asapp.MaxTemp;
                                 IsLastErrorCleared &= CurrentErrStatus;
+
+                                if (!CurrentErrStatus)
+                                    WriteToLogFile(line, isForAuditLog: true);
                             }
                         }
 
@@ -572,12 +590,15 @@ namespace SshPoc
                         {
                             _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
-                            _fileWriter.WriteLine(line);
+                            WriteToLogFile(line, isForAuditLog: false);
 
                             if (line.Contains("ping"))
                             {
                                 CurrentErrStatus = false;
                                 IsLastErrorCleared &= CurrentErrStatus;
+
+                                if (!CurrentErrStatus)
+                                    WriteToLogFile(line, isForAuditLog: true);
                             }
                         }
 
@@ -620,11 +641,15 @@ namespace SshPoc
                         {
                             _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
-                            _fileWriter.WriteLine(line);
+                            WriteToLogFile(line, isForAuditLog: false);
 
                             if (line.Contains("Value"))
                             {
                                 CurrentErrStatus = false; // (Temperature <= _threshold);
+                                IsLastErrorCleared &= CurrentErrStatus;
+
+                                if (!CurrentErrStatus)
+                                    WriteToLogFile(line, isForAuditLog: true);
                             }
                         }
 
@@ -667,13 +692,16 @@ namespace SshPoc
                         {
                             _sshStreamedResult.AppendLine("\n" + line);
                             Debug.WriteLine(line);
-                            _fileWriter.WriteLine(line);
+                            WriteToLogFile(line, isForAuditLog: false);
 
                             if (line.Contains("Value"))
                             {
                                 var latency = int.Parse(line.Substring(1));
                                 CurrentErrStatus = latency > _configParser.TestLimits.Latency.MaxFrameLatency;
                                 IsLastErrorCleared &= CurrentErrStatus;
+
+                                if (!CurrentErrStatus)
+                                    WriteToLogFile(line, isForAuditLog: true);
                             }
                         }
 
@@ -694,7 +722,22 @@ namespace SshPoc
             }
         }
 
-
+        private void WriteToLogFile(string logEntry, bool isForAuditLog=false)
+        {
+            logEntry = $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff} " + logEntry;
+            try
+            {
+                if (isForAuditLog)
+                    _serviceLogFileWriter?.WriteLine(logEntry);
+                else
+                    _auditLogFileWriter?.WriteLine(logEntry);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+        
         #endregion // Private Methods
 
         #region INotifyPropertyChanged Implementation

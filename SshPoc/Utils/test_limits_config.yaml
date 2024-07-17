@@ -1,8 +1,12 @@
 gpuBurn:
   matrixMulResult: FAIL
+  commandToRun: echo Allspark | sudo -S /home/allspark/ServiceApps/gpuBurn.sh
 asapp:
-  maxTemp: 65
+  maxTemp: 60
+  commandToRun: echo Allspark | sudo -S /home/allspark/serviceApps/asapp -O -M -T
 wifiFlooding:
-  timeoutPhrase: timeout
+  timeoutinMs: 100
+  commandToRun: ping -i 0.2 -s 65507 192.168.1.1
 latency:
   maxFrameLatency: 3
+  commandToRun: echo Allspark | sudo -S /home/allspark/ServiceApps/loopback.sh
