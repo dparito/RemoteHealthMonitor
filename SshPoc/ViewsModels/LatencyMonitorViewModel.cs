@@ -894,7 +894,6 @@ namespace SshPoc
 
         private  void RunGpuBurnTestButtonPress()
         {
-            var matrixMulLooper = true;
             if (RunStopGpuBurnTestContent == "Run GPU Burn Test")
             {
                 RunStopGpuBurnTestContent = "Stop GPU Burn Test";
@@ -914,16 +913,12 @@ namespace SshPoc
                         while (GpuBurnSession.IsRecording)
                         {
                             //GpuBurnSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/matrixMul", SshSessionModel.TestType.GpuBurn);
-                            while (matrixMulLooper)
-                            {
-                                GpuBurnSession.StartRecording(_configParser.TestLimits.GpuBurn.CommandToRun, SshSessionModel.TestType.GpuBurn);
-                                Thread.Sleep(_configParser.TestLimits.GpuBurn.SleepInMs);
-                            }                            
+                            GpuBurnSession.StartRecording(_configParser.TestLimits.GpuBurn.CommandToRun, SshSessionModel.TestType.GpuBurn);
+                            Thread.Sleep(100);
                         }
                     }
                     catch (Exception e)
                     {
-                        matrixMulLooper = false;
                         MessageBox.Show(e.Message);
                         Debug.WriteLine(e.Message);
                         GpuBurnSession.IsRecording = false;
@@ -931,13 +926,11 @@ namespace SshPoc
                 }
                 else
                 {  
-                    matrixMulLooper = false; 
                     MessageBox.Show("Invalid Session");
                 }
             }
             else
             {
-                matrixMulLooper = false;
                 GpuBurnSession?.StopRecording();
                 RunStopGpuBurnTestContent = "Run GPU Burn Test";
             }

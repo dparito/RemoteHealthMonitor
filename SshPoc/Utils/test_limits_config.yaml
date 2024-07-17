@@ -1,7 +1,7 @@
 gpuBurn:
   matrixMulResult: FAIL
   sleepInMs: 100
-  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/matrixMul
+  commandToRun: while true; do echo Allspark | sudo -S /home/allspark/service_apps/matrixMul; sleep 0.1; done
 asapp:
   maxTemp: 60
   deltaTempPerMeasurement: 0.3
