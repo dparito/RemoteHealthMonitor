@@ -34,7 +34,9 @@ namespace SshPoc
         private StreamWriter? _serviceLogFileWriter;
         private StreamWriter? _auditLogFileWriter;
         private ConfigParser _configParser;
-        private float _asappTempMeasureCurrent;
+        private float _asappTempCurrent;
+        private float _asappTempMinusOne;
+        private float _asappTempMinusTwo;
 
         #endregion // Memeber Variables
 
@@ -62,6 +64,7 @@ namespace SshPoc
             IsRecording = _keepReading = false;
             
             _configParser = new ConfigParser();
+            _asappTempCurrent = _asappTempMinusOne = _asappTempMinusTwo = float.NaN;
         }
 
         public SshSessionModel()
@@ -75,6 +78,7 @@ namespace SshPoc
             IsRecording = _keepReading = false;
 
             _configParser = new ConfigParser();
+            _asappTempCurrent = _asappTempMinusOne = _asappTempMinusTwo = float.NaN;
         }
 
         #endregion // Constructor
@@ -542,12 +546,36 @@ namespace SshPoc
 
                             if (line.Contains("Value is"))
                             {
-                                _asappTempMeasureCurrent = float.Parse(line.Substring(line.Length-8, 7));
-                                CurrentErrStatus = _asappTempMeasureCurrent > _configParser.TestLimits.Asapp.MaxTemp;
+                                if (!float.IsNaN(_asappTempCurrent))
+                                {
+                                    // shift temp
+                                    _asappTempMinusTwo = _asappTempMinusOne;
+                                    _asappTempMinusOne = _asappTempCurrent;
+                                }
+                                
+                                _asappTempCurrent = float.Parse(line.Substring(line.Length - 8, 7));
+
+                                if (float.IsNaN(_asappTempMinusOne))
+                                {
+                                    _asappTempMinusOne = _asappTempMinusTwo = _asappTempCurrent;
+                                }
+
+                                if (float.IsNaN(_asappTempMinusTwo))
+                                {
+                                    _asappTempMinusTwo = _asappTempMinusOne;
+                                }
+
+                                var deltaMinusOne = _asappTempCurrent - _asappTempMinusOne;
+                                var deltaMinustwo = _asappTempMinusOne - _asappTempMinusTwo;
+                                
+
+                                CurrentErrStatus = (_asappTempCurrent > _configParser.TestLimits.Asapp.MaxTemp) 
+                                    || (deltaMinusOne >= _configParser.TestLimits.Asapp.DeltaTempPerMeasurement 
+                                        && deltaMinustwo >= _configParser.TestLimits.Asapp.DeltaTempPerMeasurement);
                                 IsLastErrorCleared &= CurrentErrStatus;
 
                                 if (!CurrentErrStatus)
-                                    WriteToLogFile(line, isForAuditLog: true);
+                                    WriteToLogFile(line, isForAuditLog: true);        
                             }
                         }
 
@@ -730,9 +758,10 @@ namespace SshPoc
             try
             {
                 if (isForAuditLog)
-                    _serviceLogFileWriter?.WriteLine(logEntry);
-                else
                     _auditLogFileWriter?.WriteLine(logEntry);
+                else
+                    _serviceLogFileWriter?.WriteLine(logEntry);
+                
             }
             catch (Exception ex)
             {

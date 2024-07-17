@@ -52,6 +52,7 @@ namespace SshPoc
     public class Asapp
     {
         public int MaxTemp { get; set; }
+        public double DeltaTempPerMeasurement { get; set; }
         public string CommandToRun { get; set; }
     }
 

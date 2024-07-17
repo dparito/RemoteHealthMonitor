@@ -20,7 +20,8 @@ class Program
             GpuBurn = new GpuBurn { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/gpuBurn.sh", 
                                     MatrixMulResult = "FAIL" },
             Asapp = new Asapp { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T",
-                                MaxTemp = 60 },
+                                MaxTemp = 60,
+                                DeltaTempPerMeasurement = 0.3},
             WifiFlooding = new WifiFlooding { CommandToRun = "ping -i 0.2 -s 65507 192.168.1.1",
                                               TimeoutinMs = 100 },
             Latency = new Latency { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/loopback.sh",
@@ -98,6 +99,7 @@ class GpuBurn
 class Asapp
 {
     public int MaxTemp { get; set; }
+    public double DeltaTempPerMeasurement { get; set; }
     public string CommandToRun { get; set; }
 }
 
