@@ -595,7 +595,7 @@ namespace SshPoc
                             //65515 bytes from 192.168.1.1: icmp_seq = 11 ttl = 64 time = 23.6 ms
                             if (line.Contains("time"))
                             {
-                                var result = int.Parse(line.Substring(line.IndexOf("time") + 6, 3));
+                                var result = float.Parse(line.Substring(line.IndexOf("time") + 5, 4));
                                 CurrentErrStatus = result < 100;
                                 IsLastErrorCleared &= CurrentErrStatus;
 
@@ -726,7 +726,7 @@ namespace SshPoc
 
         private void WriteToLogFile(string logEntry, bool isForAuditLog=false)
         {
-            logEntry = $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss-fff} " + logEntry;
+            logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss:fff} " + logEntry;
             try
             {
                 if (isForAuditLog)
