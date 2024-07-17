@@ -579,7 +579,8 @@ namespace SshPoc
                 //TODO: add user input validation
 
                 ConnectLatencySessionOnJetson();
-                ConnectJetsonButtonContent = "Disconnect";
+                if (LatencySessionOnJetson.ConnStatus)
+                    ConnectJetsonButtonContent = "Disconnect";
             }
             // To disconnect from a remote client
             else
@@ -912,8 +913,11 @@ namespace SshPoc
                         while (GpuBurnSession.IsRecording)
                         {
                             //GpuBurnSession.StartRecording($"echo {AllsparkPassword} | sudo -S /home/allspark/serviceApps/matrixMul", SshSessionModel.TestType.GpuBurn);
-                            GpuBurnSession.StartRecording(_configParser.TestLimits.GpuBurn.CommandToRun, SshSessionModel.TestType.GpuBurn);
-                            Thread.Sleep(100);
+                            while (GpuBurnSession.ShellStream.CanWrite)
+                            {
+                                GpuBurnSession.StartRecording(_configParser.TestLimits.GpuBurn.CommandToRun, SshSessionModel.TestType.GpuBurn);
+                                Thread.Sleep(_configParser.TestLimits.GpuBurn.SleepInMs);
+                            }                            
                         }
                     }
                     catch (Exception e)

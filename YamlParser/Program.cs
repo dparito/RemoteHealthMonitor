@@ -18,7 +18,8 @@ class Program
         var testLimits = new TestLimits
         {
             GpuBurn = new GpuBurn { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/gpuBurn.sh", 
-                                    MatrixMulResult = "FAIL" },
+                                    MatrixMulResult = "FAIL",
+                                    SleepInMs = 100},
             Asapp = new Asapp { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T",
                                 MaxTemp = 60,
                                 DeltaTempPerMeasurement = 0.3},
@@ -93,6 +94,7 @@ class TestLimits
 class GpuBurn
 {
     public string MatrixMulResult { get; set; }
+    public int SleepInMs { get; set; }
     public string CommandToRun { get; set; }
 }
 

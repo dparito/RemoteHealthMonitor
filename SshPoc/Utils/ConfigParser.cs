@@ -46,6 +46,7 @@ namespace SshPoc
     public class GpuBurn
     {
         public string MatrixMulResult { get; set; }
+        public int SleepInMs { get; set; }
         public string CommandToRun { get; set; }
     }
 
