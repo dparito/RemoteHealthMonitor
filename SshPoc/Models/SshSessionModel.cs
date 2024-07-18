@@ -37,6 +37,8 @@ namespace SshPoc
         private float _asappTempCurrent;
         private float _asappTempMinusOne;
         private float _asappTempMinusTwo;
+        private string _serviceLogFilename;
+        private string _auditLogFilename;
 
         #endregion // Memeber Variables
 
@@ -65,6 +67,8 @@ namespace SshPoc
             
             _configParser = new ConfigParser();
             _asappTempCurrent = _asappTempMinusOne = _asappTempMinusTwo = float.NaN;
+            _serviceLogFilename = "";
+            _auditLogFilename = "";
         }
 
         public SshSessionModel()
@@ -79,6 +83,8 @@ namespace SshPoc
 
             _configParser = new ConfigParser();
             _asappTempCurrent = _asappTempMinusOne = _asappTempMinusTwo = float.NaN;
+            _serviceLogFilename = "";
+            _auditLogFilename = "";
         }
 
         #endregion // Constructor
@@ -193,10 +199,9 @@ namespace SshPoc
             {
                 if (SshClient == null)
                 {
-                    if (test == TestType.LatencyOnJetson)
-                        SshClient = new SshClient(IpAddress, port:22, Username, Password);
-                    else
-                        SshClient = new SshClient(IpAddress, port: 5003, Username, Password);
+                    SshClient = test == TestType.LatencyOnJetson
+                        ? new SshClient(IpAddress, port: 22, Username, Password)
+                        : new SshClient(IpAddress, port: 5003, Username, Password);
                 }
                 
                 SshClient.Connect();
@@ -243,13 +248,14 @@ namespace SshPoc
             {
                 if (SshClient.IsConnected)
                 {
-                    if (IsRecording || _keepReading)
-                        StopRecording();
+                    //if (IsRecording || _keepReading)
+                    StopRecording();
 
                     SshClient.Disconnect();
                     ConnStatus = false;
                 }
                 SshClient?.Dispose();
+                SshClient = null;
             }
         }
 
@@ -323,6 +329,7 @@ namespace SshPoc
                         Thread threadLatencyAllspark = new Thread(threadStartLatencyAllspark) { IsBackground = true };
                         threadLatencyAllspark.Start();
                         break;
+                    
                     case TestType.LatencyOnJetson:
                         // Start a background thread that will read in the data from the Pyng terminal
                         ThreadStart threadStartLatencyJetson = ReceiveDataForLatencyTestJetson;
@@ -364,8 +371,7 @@ namespace SshPoc
             IsRecording = false;
             _keepReading = false;
         }
-
-        
+      
         /// <summary>
         /// Creates instances of shell stream, stream reader and writer
         /// </summary>
@@ -379,38 +385,35 @@ namespace SshPoc
 
             _sshWriter = new StreamWriter(ShellStream) { AutoFlush = true };
 
-            //var filename = @"C:\Temp\";
-            var serviceLogFilename = "";
-            var auditLogFilename = "";
             switch (test)
             {
                 case TestType.GpuBurn:
-                    serviceLogFilename = @"GpuBurnTest_service.log";
-                    auditLogFilename = @"GpuBurnTest_audit.log";
+                    _serviceLogFilename = @"GpuBurnTest_service.log";
+                    _auditLogFilename = @"GpuBurnTest_audit.log";
                     break;
 
                 case TestType.Asapp:
-                    serviceLogFilename = @"AsappTest_service.log";
-                    auditLogFilename = @"AsappTest_audit.log";
+                    _serviceLogFilename = @"AsappTest_service.log";
+                    _auditLogFilename = @"AsappTest_audit.log";
                     break;
 
                 case TestType.WiFiFlooding:
-                    serviceLogFilename = @"WiFiFloodingTest_service.log";
-                    auditLogFilename = @"WiFiFloodingTest_audit.log";
+                    _serviceLogFilename = @"WiFiFloodingTest_service.log";
+                    _auditLogFilename = @"WiFiFloodingTest_audit.log";
                     break;
 
                 case TestType.LatencyOnAllspark:
-                    serviceLogFilename = @"LatencyTest_Allspark_service.log";
-                    auditLogFilename = @"LatencyTest_Allspark_audit.log";
+                    _serviceLogFilename = @"LatencyTest_Allspark_service.log";
+                    _auditLogFilename = @"LatencyTest_Allspark_audit.log";
                     break;
                 case TestType.LatencyOnJetson:
-                    serviceLogFilename = @"LatencyTest_Jetson_service.log";
-                    auditLogFilename = @"LatencyTest_Jetson_audit.log";
+                    _serviceLogFilename = @"LatencyTest_Jetson_service.log";
+                    _auditLogFilename = @"LatencyTest_Jetson_audit.log";
                     break;
             }
             
-            _serviceLogFileWriter = new StreamWriter(serviceLogFilename, append: File.Exists(serviceLogFilename));
-            _auditLogFileWriter = new StreamWriter(auditLogFilename, append: File.Exists(auditLogFilename));
+            _serviceLogFileWriter = new StreamWriter(_serviceLogFilename, append: File.Exists(_serviceLogFilename));
+            _auditLogFileWriter = new StreamWriter(_auditLogFilename, append: File.Exists(_auditLogFilename));
         }
 
         public void ClearLastErrorButtonPress()
@@ -462,10 +465,10 @@ namespace SshPoc
         {
             Thread.CurrentThread.IsBackground = true;
             _sshWriter.WriteLine(cmd);
-            while (ShellStream.Length == 0)
-            {
-                Thread.Sleep(500);
-            }
+            //while (ShellStream.Length == 0)
+            //{
+            //    Thread.Sleep(500);
+            //}
         }
 
         /// <summary>
@@ -569,7 +572,7 @@ namespace SshPoc
                                 var deltaMinustwo = _asappTempMinusOne - _asappTempMinusTwo;
                                 
 
-                                CurrentErrStatus = (_asappTempCurrent > _configParser.TestLimits.Asapp.MaxTemp) 
+                                CurrentErrStatus = (_asappTempCurrent < _configParser.TestLimits.Asapp.MaxTemp) 
                                     || (deltaMinusOne >= _configParser.TestLimits.Asapp.DeltaTempPerMeasurement 
                                         && deltaMinustwo >= _configParser.TestLimits.Asapp.DeltaTempPerMeasurement);
                                 IsLastErrorCleared &= CurrentErrStatus;
@@ -624,7 +627,7 @@ namespace SshPoc
                             if (line.Contains("time"))
                             {
                                 var result = float.Parse(line.Substring(line.IndexOf("time") + 5, 4));
-                                CurrentErrStatus = result < 100;
+                                CurrentErrStatus = result < _configParser.TestLimits.WifiFlooding.TimeoutinMs;
                                 IsLastErrorCleared &= CurrentErrStatus;
 
                                 if (!CurrentErrStatus)

@@ -1064,10 +1064,9 @@ namespace SshPoc
                 {
                     try
                     {
-                        LatencySessionOnAllspark.StartRecording("sudo pkill -9 vdma-out", SshSessionModel.TestType.LatencyOnAllspark);
-                        LatencySessionOnAllspark.StartRecording("sudo pkill -9 vdma-in-loopback", SshSessionModel.TestType.LatencyOnAllspark);
-                        LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2", SshSessionModel.TestType.LatencyOnAllspark);
-                        LatencySessionOnAllspark?.StopRecording();
+                        LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S pkill -9 vdma-out");
+                        LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S pkill -9 vdma-in-loopback");
+                        LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
                     }
                     catch (Exception ex)
                     {

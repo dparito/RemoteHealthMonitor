@@ -4,10 +4,10 @@ gpuBurn:
   commandToRun: while true; do echo Allspark | sudo -S /home/allspark/service_apps/matrixMul; sleep 0.1; done
 asapp:
   maxTemp: 60
-  deltaTempPerMeasurement: 0.3
-  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T
+  deltaTempPerMeasurement: 0.5
+  commandToRun: echo Allspark | sudo -S systemctl stop sn-oled-mgr.service; echo Allspark | sudo -S systemctl stop sn-led-array-mgr.service; echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T
 wifiFlooding:
-  timeoutinMs: 100
+  timeoutinMs: 23
   commandToRun: ping -i 0.2 -s 65507 192.168.1.1
 latency:
   maxFrameLatency: 3
