@@ -215,24 +215,7 @@ namespace SshPoc
                     // Instantiate shell stream, stream reader and writer for first connection
                     if (ShellStream == null && _sshReader == null && _sshWriter == null)
                     {
-                        switch (test)
-                        {
-                            case TestType.GpuBurn:
-                                CreateShellStream(TestType.GpuBurn);
-                                break;
-                            case TestType.Asapp:
-                                CreateShellStream(TestType.Asapp);
-                                break;
-                            case TestType.WiFiFlooding:
-                                CreateShellStream(TestType.WiFiFlooding);
-                                break;
-                            case TestType.LatencyOnAllspark:
-                                CreateShellStream(TestType.LatencyOnAllspark);
-                                break;
-                            case TestType.LatencyOnJetson:
-                                CreateShellStream(TestType.LatencyOnJetson);
-                                break;
-                        }
+                        CreateShellStream(test);
                     }
                 }
             }
@@ -385,35 +368,11 @@ namespace SshPoc
 
             _sshWriter = new StreamWriter(ShellStream) { AutoFlush = true };
 
-            switch (test)
-            {
-                case TestType.GpuBurn:
-                    _serviceLogFilename = @"GpuBurnTest_service.log";
-                    _auditLogFilename = @"GpuBurnTest_audit.log";
-                    break;
-
-                case TestType.Asapp:
-                    _serviceLogFilename = @"AsappTest_service.log";
-                    _auditLogFilename = @"AsappTest_audit.log";
-                    break;
-
-                case TestType.WiFiFlooding:
-                    _serviceLogFilename = @"WiFiFloodingTest_service.log";
-                    _auditLogFilename = @"WiFiFloodingTest_audit.log";
-                    break;
-
-                case TestType.LatencyOnAllspark:
-                    _serviceLogFilename = @"LatencyTest_Allspark_service.log";
-                    _auditLogFilename = @"LatencyTest_Allspark_audit.log";
-                    break;
-                case TestType.LatencyOnJetson:
-                    _serviceLogFilename = @"LatencyTest_Jetson_service.log";
-                    _auditLogFilename = @"LatencyTest_Jetson_audit.log";
-                    break;
-            }
-            
-            _serviceLogFileWriter = new StreamWriter(_serviceLogFilename, append: File.Exists(_serviceLogFilename));
-            _auditLogFileWriter = new StreamWriter(_auditLogFilename, append: File.Exists(_auditLogFilename));
+            _serviceLogFilename = $"{test}_Service_{DateTime.Now:yyyy-MM-ddTHHmmss}.log";
+            _auditLogFilename = $"{test}_Audit_{DateTime.Now:yyyy-MM-ddTHHmmss}.log";
+                        
+            _serviceLogFileWriter = new StreamWriter(_serviceLogFilename);
+            _auditLogFileWriter = new StreamWriter(_auditLogFilename);
         }
 
         public void ClearLastErrorButtonPress()
