@@ -12,7 +12,7 @@ namespace SshPoc
 {
     public class ConfigParser
     {
-        private string _filepath = @"../../../../SshPoc/Utils/test_limits_config.yaml";
+        private string _filepath = @"test_limits_config.yaml";
 
         public ConfigParser()
         {
