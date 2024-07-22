@@ -57,12 +57,6 @@ namespace SshPoc
 
         public LatencyMonitorViewModel()
         {
-            //Debug.Listeners.Add(new TextWriterTraceListener("c:\\temp\\test.txt"));
-            //var listener = new TextWriterTraceListener("c:\\temp\\test.log");
-            //Debug.
-            //Debug.AutoFlush = true;
-            //Debug.WriteLine("test");
-
             // Configuration
             _configParser = new ConfigParser();
             AllsparkUsername = "allspark";
@@ -107,7 +101,8 @@ namespace SshPoc
 
             // Latency Test
             LatencySessionOnAllspark = new SshSessionModel();
-            LatencySessionOnJetson = new SshSessionModel();
+            CounterInjectorSessionOnJetson = new SshSessionModel();
+            CounterAnalyzerSessionOnJetson = new SshSessionModel();
             RunStopLoopbackContent = "Run Loopback";
             RunStopInjectorContent = "Run Counter Injector";
             RunStopAnalyzerContent = "Run Counter Analyzer";
@@ -389,7 +384,9 @@ namespace SshPoc
         
         #region Latency Test Properties
 
-        public SshSessionModel? LatencySessionOnJetson { get; private set; }
+        public SshSessionModel? CounterInjectorSessionOnJetson { get; private set; }
+        
+        public SshSessionModel? CounterAnalyzerSessionOnJetson { get; private set; }
         
         public SshSessionModel? LatencySessionOnAllspark { get; private set; }
 
@@ -540,8 +537,11 @@ namespace SshPoc
                 //TODO: add user input validation
                 
                 ConnectGpuBurnSession();
+                Thread.Sleep(1000);
                 ConnectAsappSession();
+                Thread.Sleep(1000);
                 ConnectWiFiPingSession();
+                Thread.Sleep(1000);
                 ConnectLatencySessionOnAllspark();
 
                 // Changes button label 
@@ -584,21 +584,28 @@ namespace SshPoc
             {
                 //TODO: add user input validation
 
-                ConnectLatencySessionOnJetson();
-                if (LatencySessionOnJetson.ConnStatus)
+                Thread.Sleep(1500);
+                ConnectCounterInjectorSessionOnJetson();
+                Thread.Sleep(1500);
+                ConnectCounterAnalyzerSessionOnJetson();
+                if (CounterInjectorSessionOnJetson.ConnStatus && CounterAnalyzerSessionOnJetson.ConnStatus)
                     ConnectJetsonButtonContent = "Disconnect";
             }
             // To disconnect from a remote client
             else
             {
-                Debug.WriteLine($"Disconnecting {LatencySessionOnJetson?.IpAddress}");
+                Debug.WriteLine($"Disconnecting {CounterInjectorSessionOnJetson?.IpAddress}");
+                Debug.WriteLine($"Disconnecting {CounterAnalyzerSessionOnJetson?.IpAddress}");
 
-                LatencySessionOnJetson?.DisconnectSsh();
-                LatencySessionOnJetson?.Dispose();
+                CounterInjectorSessionOnJetson?.DisconnectSsh();
+                CounterInjectorSessionOnJetson?.Dispose();
+                CounterAnalyzerSessionOnJetson?.DisconnectSsh();
+                CounterAnalyzerSessionOnJetson?.Dispose();
                 
                 ConnectJetsonButtonContent = "Connect";
                 
-                Debug.WriteLine($"Disconnected {LatencySessionOnJetson?.IpAddress}");
+                Debug.WriteLine($"Disconnected {CounterInjectorSessionOnJetson?.IpAddress}");
+                Debug.WriteLine($"Disconnected {CounterAnalyzerSessionOnJetson?.IpAddress}");
             }
         }
 
@@ -766,29 +773,29 @@ namespace SshPoc
             }
         }
 
-        private bool ConnectLatencySessionOnJetson()
+        private bool ConnectCounterInjectorSessionOnJetson()
         {
-            if (LatencySessionOnJetson == null || LatencySessionOnJetson.DisposedValue)
-                LatencySessionOnJetson = new SshSessionModel(JetsonHostIpAddress, JetsonUsername, JetsonPassword, 22);
+            if (CounterInjectorSessionOnJetson == null || CounterInjectorSessionOnJetson.DisposedValue)
+                CounterInjectorSessionOnJetson = new SshSessionModel(JetsonHostIpAddress, JetsonUsername, JetsonPassword, 22);
             else
             {
-                LatencySessionOnJetson.Username = JetsonUsername;
-                LatencySessionOnJetson.Password = JetsonPassword;
-                LatencySessionOnJetson.IpAddress = JetsonHostIpAddress;
-                LatencySessionOnJetson.PortNum = 22;
+                CounterInjectorSessionOnJetson.Username = JetsonUsername;
+                CounterInjectorSessionOnJetson.Password = JetsonPassword;
+                CounterInjectorSessionOnJetson.IpAddress = JetsonHostIpAddress;
+                CounterInjectorSessionOnJetson.PortNum = 22;
             }
 
             try
             {
-                Debug.WriteLine($"Connecting {LatencySessionOnJetson.IpAddress} for {nameof(LatencySessionOnJetson)}");
+                Debug.WriteLine($"Connecting {CounterInjectorSessionOnJetson.IpAddress} for {nameof(CounterInjectorSessionOnJetson)}");
 
-                LatencySessionOnJetson.ConnectSsh(SshSessionModel.TestType.LatencyOnJetson);
+                CounterInjectorSessionOnJetson.ConnectSsh(SshSessionModel.TestType.LatencyOnJetson);
 
                 // if connection established
-                if (LatencySessionOnJetson.GetConnectionStatus())
+                if (CounterInjectorSessionOnJetson.GetConnectionStatus())
                 {
                     //Debug.WriteLine(Session.StartRecording("ls -l"));
-                    Debug.WriteLine($"Connected {LatencySessionOnJetson.IpAddress} for {nameof(LatencySessionOnJetson)}");
+                    Debug.WriteLine($"Connected {CounterInjectorSessionOnJetson.IpAddress} for {nameof(CounterInjectorSessionOnJetson)}");
 
                     return true;
                 }
@@ -798,8 +805,49 @@ namespace SshPoc
             // Failed to connect 
             catch (Exception ex)
             {
-                LatencySessionOnJetson?.DisconnectSsh();
-                LatencySessionOnJetson?.Dispose();
+                CounterInjectorSessionOnJetson?.DisconnectSsh();
+                CounterInjectorSessionOnJetson?.Dispose();
+
+                MessageBox.Show($"Failed to connect to {JetsonUsername}@{JetsonHostIpAddress}");
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private bool ConnectCounterAnalyzerSessionOnJetson()
+        {
+            if (CounterAnalyzerSessionOnJetson == null || CounterAnalyzerSessionOnJetson.DisposedValue)
+                CounterAnalyzerSessionOnJetson = new SshSessionModel(JetsonHostIpAddress, JetsonUsername, JetsonPassword, 22);
+            else
+            {
+                CounterAnalyzerSessionOnJetson.Username = JetsonUsername;
+                CounterAnalyzerSessionOnJetson.Password = JetsonPassword;
+                CounterAnalyzerSessionOnJetson.IpAddress = JetsonHostIpAddress;
+                CounterAnalyzerSessionOnJetson.PortNum = 22;
+            }
+
+            try
+            {
+                Debug.WriteLine($"Connecting {CounterAnalyzerSessionOnJetson.IpAddress} for {nameof(CounterAnalyzerSessionOnJetson)}");
+
+                CounterAnalyzerSessionOnJetson.ConnectSsh(SshSessionModel.TestType.LatencyOnJetson);
+
+                // if connection established
+                if (CounterAnalyzerSessionOnJetson.GetConnectionStatus())
+                {
+                    //Debug.WriteLine(Session.StartRecording("ls -l"));
+                    Debug.WriteLine($"Connected {CounterAnalyzerSessionOnJetson.IpAddress} for {nameof(CounterAnalyzerSessionOnJetson)}");
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+            // Failed to connect 
+            catch (Exception ex)
+            {
+                CounterAnalyzerSessionOnJetson?.DisconnectSsh();
+                CounterAnalyzerSessionOnJetson?.Dispose();
 
                 MessageBox.Show($"Failed to connect to {JetsonUsername}@{JetsonHostIpAddress}");
                 Debug.WriteLine(ex.Message);
@@ -813,7 +861,7 @@ namespace SshPoc
 
         private void ClearLastErrorButtonPressWiFi() => WifiPingSession?.ClearLastErrorButtonPress();
 
-        private void ClearLastErrorButtonPressLatency() => LatencySessionOnJetson?.ClearLastErrorButtonPress();
+        private void ClearLastErrorButtonPressLatency() => CounterInjectorSessionOnJetson?.ClearLastErrorButtonPress();
 
         private  void RunWiFiFloodTestButtonPress()
         {
@@ -947,32 +995,24 @@ namespace SshPoc
             if (RunStopAnalyzerContent == "Run Counter Analyzer")
             {
                 //RunStopAnalyzerContent = "Stop Counter Analyzer";
-                if (LatencySessionOnJetson != null && LatencySessionOnJetson.GetConnectionStatus())
+                if (CounterAnalyzerSessionOnJetson != null && CounterAnalyzerSessionOnJetson.GetConnectionStatus())
                 {
                     try
                     {
                         // reopen the shell stream if already closed
-                        if (!LatencySessionOnJetson.ShellStream.CanWrite)
-                            LatencySessionOnJetson.CreateShellStream(SshSessionModel.TestType.LatencyOnJetson);
+                        if (!CounterAnalyzerSessionOnJetson.ShellStream.CanWrite)
+                            CounterAnalyzerSessionOnJetson.CreateShellStream(SshSessionModel.TestType.LatencyOnJetson);
 
                         // changes status indicators
-                        LatencySessionOnJetson.CurrentErrStatus = true;
-                        LatencySessionOnJetson.IsLastErrorCleared = true;
+                        CounterAnalyzerSessionOnJetson.CurrentErrStatus = true;
+                        CounterAnalyzerSessionOnJetson.IsLastErrorCleared = true;
 
-                        LatencySessionOnJetson.IsRecording = true;
-                        while (LatencySessionOnJetson.IsRecording)
+                        CounterAnalyzerSessionOnJetson.IsRecording = true;
+                        while (CounterAnalyzerSessionOnJetson.IsRecording)
                         {
-                            //LatencySessionOnJetson.RunCommand($"julia --project -e 'import Pkg; Pkg.instantiate()'");
-                            //Thread.Sleep(1000);
-                            //LatencySessionOnJetson.RunCommand($"julia --project -e 'import Pkg; Pkg.precompile()'");
-                            //Thread.Sleep(1000);
-                            LatencySessionOnJetson.StartRecording(_configParser.TestLimits.LatencyAnalyzer.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
+                            CounterAnalyzerSessionOnJetson.StartRecording(_configParser.TestLimits.LatencyAnalyzer.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
                             Thread.Sleep(100);
                             Thread.CurrentThread.IsBackground = true;
-                        }
-                        if (LatencySessionOnJetson.ErrorInExecutingCmd)
-                        {
-                            throw new Exception("Error in executing Command");
                         }
                         RunStopAnalyzerContent = "Stop Counter Analyzer";
                     }
@@ -980,8 +1020,8 @@ namespace SshPoc
                     {
                         MessageBox.Show(e.Message);
                         Debug.WriteLine(e.Message);
-                        LatencySessionOnJetson.IsRecording = false;
-                        LatencySessionOnJetson.StopRecording();
+                        CounterAnalyzerSessionOnJetson.IsRecording = false;
+                        CounterAnalyzerSessionOnJetson.StopRecording();
                     }
                 }
                 else
@@ -989,7 +1029,7 @@ namespace SshPoc
             }
             else
             {
-                LatencySessionOnJetson.StopRecording();
+                CounterAnalyzerSessionOnJetson.StopRecording();
                 RunStopAnalyzerContent = "Run Counter Analyzer";
             }
         }
@@ -999,27 +1039,23 @@ namespace SshPoc
             if (RunStopInjectorContent == "Run Counter Injector")
             {
                 //RunStopInjectorContent = "Stop Counter Injector";
-                if (LatencySessionOnJetson != null && LatencySessionOnJetson.GetConnectionStatus())
+                if (CounterInjectorSessionOnJetson != null && CounterInjectorSessionOnJetson.GetConnectionStatus())
                 {
                     try
                     {
                         // changes status indicators
-                        LatencySessionOnJetson.CurrentErrStatus = true;
-                        LatencySessionOnJetson.IsLastErrorCleared = true;
+                        CounterInjectorSessionOnJetson.CurrentErrStatus = true;
+                        CounterInjectorSessionOnJetson.IsLastErrorCleared = true;
 
-                        LatencySessionOnJetson.IsRecording = true;
-                        while (LatencySessionOnJetson.IsRecording)
+                        CounterInjectorSessionOnJetson.IsRecording = true;
+                        while (CounterInjectorSessionOnJetson.IsRecording)
                         {
-                            //LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
+                            //CounterInjectorSessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
                             //Thread.Sleep(1000);
-                            //LatencySessionOnJetson.StartRecording($"export DISPLAY=:1", SshSessionModel.TestType.LatencyOnJetson);
+                            //CounterInjectorSessionOnJetson.StartRecording($"export DISPLAY=:1", SshSessionModel.TestType.LatencyOnJetson);
                             //Thread.Sleep(1000);
-                            LatencySessionOnJetson.StartRecording(_configParser.TestLimits.LatencyInjector.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
+                            CounterInjectorSessionOnJetson.StartRecording(_configParser.TestLimits.LatencyInjector.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
                             Thread.Sleep(10000);
-                        }
-                        if (LatencySessionOnJetson.ErrorInExecutingCmd)
-                        {
-                            throw new Exception("Error in executing Command");
                         }
                         RunStopInjectorContent = "Stop Counter Injector";
                     }
@@ -1027,8 +1063,8 @@ namespace SshPoc
                     {
                         MessageBox.Show(e.Message);
                         Debug.WriteLine(e.Message);
-                        LatencySessionOnJetson.IsRecording = false;
-                        LatencySessionOnJetson.StopRecording();
+                        CounterInjectorSessionOnJetson.IsRecording = false;
+                        CounterInjectorSessionOnJetson.StopRecording();
                     }
                 }
                 else
@@ -1037,7 +1073,7 @@ namespace SshPoc
             else
             {
                 RunStopInjectorContent = "Run Counter Injector";
-                LatencySessionOnJetson?.StopRecording();
+                CounterInjectorSessionOnJetson?.StopRecording();
             }
         }
 
@@ -1086,8 +1122,8 @@ namespace SshPoc
                     try
                     {
                         LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S pkill -9 vdma-out");
-                        LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S pkill -9 vdma-in-loopback");
-                        LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
+                        //LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S pkill -9 vdma-in-loopback");
+                        //LatencySessionOnAllspark.RunCommand("echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C2");
                     }
                     catch (Exception ex)
                     {

@@ -325,10 +325,10 @@
                 <Button Name="btnLoopback" Content="{Binding RunStopLoopbackContent}" IsEnabled="{Binding LatencySessionOnAllspark.ConnStatus}" Command="{Binding RunLoopbackCommand}" 
                         Background="#FFCF8E" Width="130" Height="25" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="440,45,0,0"/>
 
-                <Button Name="btnInjector" Content="{Binding RunStopInjectorContent}" IsEnabled="{Binding LatencySessionOnJetson.ConnStatus}" Command="{Binding RunInjectorCommand}" 
+                <Button Name="btnInjector" Content="{Binding RunStopInjectorContent}" IsEnabled="{Binding CounterAnalyzerSessionOnJetson.ConnStatus}" Command="{Binding RunInjectorCommand}" 
                         Background="#FFCF8E" Width="130" Height="25" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="440,75,0,10"/>
 
-                <Button Name="btnAnalyzer" Content="{Binding RunStopAnalyzerContent}" IsEnabled="{Binding LatencySessionOnJetson.ConnStatus}" Command="{Binding RunAnalyzerCommand}" 
+                <Button Name="btnAnalyzer" Content="{Binding RunStopAnalyzerContent}" IsEnabled="{Binding CounterAnalyzerSessionOnJetson.ConnStatus}" Command="{Binding RunAnalyzerCommand}" 
                         Background="#FFCF8E" Width="130" Height="25" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="440,105,0,0"/>
 
                 <!--CONNECTIVITY STATUS INDICATOR FOR ALLSPARK-->
@@ -355,10 +355,10 @@
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="Gray"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding LatencySessionOnJetson.ConnStatus, NotifyOnSourceUpdated=True}" Value="True">
+                                <DataTrigger Binding="{Binding CounterAnalyzerSessionOnJetson.ConnStatus, NotifyOnSourceUpdated=True}" Value="True">
                                     <Setter Property="Fill" Value="Green"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding LatencySessionOnJetson.ConnStatus, NotifyOnSourceUpdated=True}" Value="False">
+                                <DataTrigger Binding="{Binding CounterAnalyzerSessionOnJetson.ConnStatus, NotifyOnSourceUpdated=True}" Value="False">
                                     <Setter Property="Fill" Value="Red"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -373,10 +373,10 @@
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="Gray"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding LatencySessionOnJetson.CurrentErrStatus, NotifyOnSourceUpdated=True}" Value="True">
+                                <DataTrigger Binding="{Binding CounterAnalyzerSessionOnJetson.CurrentErrStatus, NotifyOnSourceUpdated=True}" Value="True">
                                     <Setter Property="Fill" Value="Green"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding LatencySessionOnJetson.CurrentErrStatus, NotifyOnSourceUpdated=True}" Value="False">
+                                <DataTrigger Binding="{Binding CounterAnalyzerSessionOnJetson.CurrentErrStatus, NotifyOnSourceUpdated=True}" Value="False">
                                     <Setter Property="Fill" Value="Red"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -391,10 +391,10 @@
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="Gray"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding LatencySessionOnJetson.IsLastErrorCleared}" Value="True">
+                                <DataTrigger Binding="{Binding CounterAnalyzerSessionOnJetson.IsLastErrorCleared}" Value="True">
                                     <Setter Property="Fill" Value="Green"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding LatencySessionOnJetson.IsLastErrorCleared}" Value="False">
+                                <DataTrigger Binding="{Binding CounterAnalyzerSessionOnJetson.IsLastErrorCleared}" Value="False">
                                     <Setter Property="Fill" Value="Red"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -403,7 +403,7 @@
                 </Ellipse>
                 <Label Name="lblErrorStatusGpuLatency" Content="Last Error Status" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="255,75,5,5" />
 
-                <Button Name="btnClearErrorStatusLatency" Content="Clear Last Error" IsEnabled="{Binding LatencySessionOnJetson.ConnStatus}" Command="{Binding ClearLastErrorCommandLatency}"
+                <Button Name="btnClearErrorStatusLatency" Content="Clear Last Error" IsEnabled="{Binding CounterAnalyzerSessionOnJetson.ConnStatus}" Command="{Binding ClearLastErrorCommandLatency}"
                         Background="#FFCF8E" Width="100" Height="25" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="255,105,0,10"/>
             </Grid>
 
