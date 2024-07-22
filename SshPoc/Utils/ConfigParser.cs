@@ -28,8 +28,10 @@ namespace SshPoc
             Debug.WriteLine($"ASAPP.Max Temperature = {TestLimits.Asapp.MaxTemp}");
             Debug.WriteLine($"WiFi Flood.Command = {TestLimits.WifiFlooding.CommandToRun}");
             Debug.WriteLine($"WiFi Flood.TimeoutinMs= {TestLimits.WifiFlooding.TimeoutinMs}");
-            Debug.WriteLine($"Latency.Command= {TestLimits.Latency.CommandToRun}");
-            Debug.WriteLine($"Latency.Max Frame Latency = {TestLimits.Latency.MaxFrameLatency}");
+            Debug.WriteLine($"LatencyLoopback.Command= {TestLimits.LatencyLoopback.CommandToRun}");
+            Debug.WriteLine($"LatencyInjector.Command= {TestLimits.LatencyInjector.CommandToRun}");
+            Debug.WriteLine($"LatencyAnalyzer.Command= {TestLimits.LatencyAnalyzer.CommandToRun}");
+            Debug.WriteLine($"LatencyAnalyzer.MaxFrameLatency= {TestLimits.LatencyAnalyzer.MaxFrameLatency}");
         }
 
         public TestLimits TestLimits { get; set; }
@@ -40,7 +42,9 @@ namespace SshPoc
         public GpuBurn GpuBurn { get; set; }
         public Asapp Asapp { get; set; }
         public WifiFlooding WifiFlooding { get; set; }
-        public Latency Latency { get; set; }
+        public LatencyLoopback LatencyLoopback { get; set; }
+        public LatencyInjector LatencyInjector { get; set; }
+        public LatencyAnalyzer LatencyAnalyzer { get; set; }
     }
 
     public class GpuBurn
@@ -63,7 +67,17 @@ namespace SshPoc
         public string CommandToRun { get; set; }
     }
 
-    public class Latency
+    public class LatencyLoopback
+    {
+        public string CommandToRun { get; set; }
+    }
+
+    public class LatencyInjector
+    {
+        public string CommandToRun { get; set; }
+    }
+
+    public class LatencyAnalyzer
     {
         public int MaxFrameLatency { get; set; }
         public string CommandToRun { get; set; }

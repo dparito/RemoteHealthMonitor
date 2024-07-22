@@ -25,8 +25,10 @@ class Program
                                 DeltaTempPerMeasurement = 0.3},
             WifiFlooding = new WifiFlooding { CommandToRun = "ping -i 0.2 -s 65507 192.168.1.1",
                                               TimeoutinMs = 100 },
-            Latency = new Latency { CommandToRun = "echo Allspark | sudo -S /home/allspark/service_apps/loopback.sh",
-                                    MaxFrameLatency = 3 },
+            LatencyLoopback = new LatencyLoopback { CommandToRun = "echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1; echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &; echo Allspark | sudo -S /home/allspark/service_apps/vdma-in-loopback" },
+            LatencyInjector = new LatencyInjector { CommandToRun = "cd /home/allspark/Prime/Prime-master/LatencyTester.jl; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &" },
+            LatencyAnalyzer = new LatencyAnalyzer { CommandToRun = "cd /home/allspark/Prime/Prime-master/LatencyTester.jl; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counters_analyzer.jl /dev/video0 -s 1",
+                                              MaxFrameLatency = 3 },
         };
 
         using var writer = new StreamWriter(filepath);
@@ -60,8 +62,11 @@ class Program
         Console.WriteLine($"WiFi Flood.Command = {limitsBack.WifiFlooding.CommandToRun}");
         Console.WriteLine($"WiFi Flood.TimeoutinMs= {limitsBack.WifiFlooding.TimeoutinMs}");
         
-        Console.WriteLine($"Latency.Command= {limitsBack.Latency.CommandToRun}");
-        Console.WriteLine($"Latency.Max Frame Latency = {limitsBack.Latency.MaxFrameLatency}");
+        Console.WriteLine($"LatencyLoopback.Command= {limitsBack.LatencyLoopback.CommandToRun}");
+        Console.WriteLine($"LatencyInjector.Command= {limitsBack.LatencyInjector.CommandToRun}");
+        Console.WriteLine($"LatencyAnalyzer.Command= {limitsBack.LatencyAnalyzer.CommandToRun}");
+        Console.WriteLine($"LatencyAnalyzer.MaxFrameLatency= {limitsBack.LatencyAnalyzer.MaxFrameLatency}");
+
     }
 }
 
@@ -88,7 +93,9 @@ class TestLimits
     public GpuBurn GpuBurn { get; set; }
     public Asapp Asapp { get; set; }
     public WifiFlooding WifiFlooding { get; set; }
-    public Latency Latency { get; set; }
+    public LatencyLoopback LatencyLoopback { get; set; }
+    public LatencyInjector LatencyInjector { get; set; }
+    public LatencyAnalyzer LatencyAnalyzer { get; set; }
 }
 
 class GpuBurn
@@ -111,9 +118,18 @@ class WifiFlooding
     public string CommandToRun { get; set; }
 }
 
-class Latency
+class LatencyLoopback
+{
+    public string CommandToRun { get; set; }
+}
+
+class LatencyInjector
+{
+    public string CommandToRun { get; set; }
+}
+
+class LatencyAnalyzer
 {
     public int MaxFrameLatency { get; set; }
     public string CommandToRun { get; set; }
 }
-

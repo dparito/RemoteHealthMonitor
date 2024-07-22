@@ -956,9 +956,9 @@ namespace SshPoc
                         LatencySessionOnJetson.IsRecording = true;
                         while (LatencySessionOnJetson.IsRecording)
                         {
-                            LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
-                            Thread.Sleep(1000);
-                            LatencySessionOnJetson.StartRecording($"julia --project ./counters_analyzer.jl /dev/video0 -s 1", SshSessionModel.TestType.LatencyOnJetson);
+                            //LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
+                            //Thread.Sleep(1000);
+                            LatencySessionOnJetson.StartRecording(_configParser.TestLimits.LatencyAnalyzer.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
                             Thread.Sleep(100);
                             Thread.CurrentThread.IsBackground = true;
                         }
@@ -996,11 +996,11 @@ namespace SshPoc
                         LatencySessionOnJetson.IsRecording = true;
                         while (LatencySessionOnJetson.IsRecording)
                         {
-                            LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
-                            Thread.Sleep(1000);
-                            LatencySessionOnJetson.StartRecording($"export DISPLAY=:1", SshSessionModel.TestType.LatencyOnJetson);
-                            Thread.Sleep(1000);
-                            LatencySessionOnJetson.StartRecording($"julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &", SshSessionModel.TestType.LatencyOnJetson);
+                            //LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
+                            //Thread.Sleep(1000);
+                            //LatencySessionOnJetson.StartRecording($"export DISPLAY=:1", SshSessionModel.TestType.LatencyOnJetson);
+                            //Thread.Sleep(1000);
+                            LatencySessionOnJetson.StartRecording(_configParser.TestLimits.LatencyInjector.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
                             Thread.Sleep(10000);
                         }
                     }
@@ -1044,7 +1044,7 @@ namespace SshPoc
                             //LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &", SshSessionModel.TestType.LatencyOnAllspark);
                             //Thread.Sleep(3000);
                             //LatencySessionOnAllspark.StartRecording("echo Allspark | sudo -S /sn/bin/new-loopback/vdma-in-loopback", SshSessionModel.TestType.LatencyOnAllspark);
-                            LatencySessionOnAllspark.StartRecording(_configParser.TestLimits.Latency.CommandToRun, SshSessionModel.TestType.LatencyOnAllspark);
+                            LatencySessionOnAllspark.StartRecording(_configParser.TestLimits.LatencyLoopback.CommandToRun, SshSessionModel.TestType.LatencyOnAllspark);
                             Thread.Sleep(1000);
                         }
                     }

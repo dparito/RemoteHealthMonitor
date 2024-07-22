@@ -1,14 +1,18 @@
 gpuBurn:
   matrixMulResult: FAIL
   sleepInMs: 100
-  commandToRun: while true; do echo Allspark | sudo -S /home/allspark/service_apps/matrixMul; sleep 0.1; done
+  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/gpuBurn.sh
 asapp:
   maxTemp: 60
-  deltaTempPerMeasurement: 0.5
-  commandToRun: echo Allspark | sudo -S systemctl stop sn-oled-mgr.service; echo Allspark | sudo -S systemctl stop sn-led-array-mgr.service; echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T
+  deltaTempPerMeasurement: 0.3
+  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T
 wifiFlooding:
-  timeoutinMs: 23
+  timeoutinMs: 100
   commandToRun: ping -i 0.2 -s 65507 192.168.1.1
-latency:
+latencyLoopback:
+  commandToRun: echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1; echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &; echo Allspark | sudo -S /home/allspark/service_apps/vdma-in-loopback
+latencyInjector:
+  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &
+latencyAnalyzer:
   maxFrameLatency: 3
-  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/loopback.sh
+  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counters_analyzer.jl /dev/video0 -s 1

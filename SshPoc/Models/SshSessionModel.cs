@@ -689,7 +689,7 @@ namespace SshPoc
                             if (line.Contains("Value"))
                             {
                                 var latency = int.Parse(line.Substring(1));
-                                CurrentErrStatus = latency > _configParser.TestLimits.Latency.MaxFrameLatency;
+                                CurrentErrStatus = latency > _configParser.TestLimits.LatencyAnalyzer.MaxFrameLatency;
                                 IsLastErrorCleared &= CurrentErrStatus;
 
                                 if (!CurrentErrStatus)
