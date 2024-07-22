@@ -1,18 +1,20 @@
 gpuBurn:
   matrixMulResult: FAIL
   sleepInMs: 100
-  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/gpuBurn.sh
+  commandToRun: while true; do echo Allspark | sudo -S /home/allspark/serviceApps/matrixMul; sleep 0.1; done # this is for EMC
+  #commandToRun: echo Allspark | sudo -S /home/allspark/serviceApps/gpuBurn.sh & # this is for EMI
 asapp:
   maxTemp: 60
   deltaTempPerMeasurement: 0.3
-  commandToRun: echo Allspark | sudo -S /home/allspark/service_apps/asapp -O -M -T
+  commandToRun: echo Allspark | sudo -S systemctl stop sn-oled-mgr.service; sleep 7; echo Allspark | sudo -S systemctl stop sn-oled-mgr.service; echo Allspark | sudo -S systemctl stop sn-led-array-mgr.service; sleep 7; echo Allspark | sudo -S systemctl stop sn-led-array-mgr.service; sudo /sn/bin/reg_rw_1M /dev/xdma0_user 0x00 w 0x0e; echo Allspark | sudo -S ./serviceApps/asapp -O -M -T &  
 wifiFlooding:
   timeoutinMs: 100
-  commandToRun: ping -i 0.2 -s 65507 192.168.1.1
+  commandToRun: ping -s 65500 -i 0.2 192.168.1.1 # this for EMC
+  #commandToRun: echo Allspark | sudo -S /home/allspark/serviceApps/Pinger.sh # this for EMI
 latencyLoopback:
-  commandToRun: echo Allspark | sudo -S /sn/bin/ublaze_mgr_cli -C1; echo Allspark | sudo -S /sn/bin/vdma-out > /dev/null &; echo Allspark | sudo -S /home/allspark/service_apps/vdma-in-loopback
+  commandToRun: echo Allspark | sudo -S /home/allspark/serviceApps/loopback.sh
 latencyInjector:
-  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &
+  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; sleep 0.1; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &
 latencyAnalyzer:
   maxFrameLatency: 3
-  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counters_analyzer.jl /dev/video0 -s 1
+  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; sleep 0.1; echo Allspark | sudo -S julia --project ./counters_analyzer.jl /dev/video0 -s 1

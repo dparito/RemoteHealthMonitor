@@ -338,21 +338,25 @@ namespace SshPoc
         /// </summary>
         public void StopRecording()
         {
-            ShellStream?.Flush();
-            _sshWriter?.Flush();
-            _sshReader?.DiscardBufferedData();
-            _sshStreamedResult?.Clear();
-            _serviceLogFileWriter?.Flush();
-            _serviceLogFileWriter?.Close();
-            _serviceLogFileWriter?.Dispose();
-            _auditLogFileWriter?.Flush();
-            _auditLogFileWriter?.Close();
-            _auditLogFileWriter?.Dispose();
+            try
+            {
+                ShellStream?.Flush();
+                _sshWriter?.Flush();
+                _sshReader?.DiscardBufferedData();
+                _sshStreamedResult?.Clear();
+                _serviceLogFileWriter?.Flush();
+                _serviceLogFileWriter?.Close();
+                _serviceLogFileWriter?.Dispose();
+                _auditLogFileWriter?.Flush();
+                _auditLogFileWriter?.Close();
+                _auditLogFileWriter?.Dispose();
 
-            _sshReader?.BaseStream.Close();
+                _sshReader?.BaseStream.Close();
 
-            IsRecording = false;
-            _keepReading = false;
+                IsRecording = false;
+                _keepReading = false;
+            }
+            catch (Exception ex) { Debug.WriteLine(ex); }
         }
       
         /// <summary>
