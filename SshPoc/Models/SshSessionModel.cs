@@ -25,6 +25,7 @@ namespace SshPoc
         private bool _connStatus = false;
         private bool _currentErrStatus = false;
         private bool _isLastErrorCleared = false;
+        private bool _errorInExecutingCmd = false;
         private bool _isRecording;
         private bool _keepReading;
         private ShellStream? _shellStream;
@@ -62,6 +63,7 @@ namespace SshPoc
             ConnStatus = false;
             CurrentErrStatus = false;
             IsLastErrorCleared = false;
+            ErrorInExecutingCmd = false;
 
             IsRecording = _keepReading = false;
             
@@ -78,6 +80,7 @@ namespace SshPoc
             ConnStatus = false;
             CurrentErrStatus = false;
             IsLastErrorCleared = false;
+            ErrorInExecutingCmd = false;
 
             IsRecording = _keepReading = false;
 
@@ -176,6 +179,8 @@ namespace SshPoc
         public ShellStream? ShellStream { get => _shellStream; set => _shellStream = value; }
         
         public bool IsRecording { get => _isRecording; set => _isRecording = value; }
+        
+        public bool ErrorInExecutingCmd { get => _errorInExecutingCmd; set => _errorInExecutingCmd = value; }
 
         public enum TestType
         {
@@ -695,10 +700,15 @@ namespace SshPoc
                                 var latency = int.Parse(line.Substring(1));
                                 CurrentErrStatus = latency > _configParser.TestLimits.LatencyAnalyzer.MaxFrameLatency;
                                 IsLastErrorCleared &= CurrentErrStatus;
-
-                                if (!CurrentErrStatus)
-                                    WriteToLogFile(line, isForAuditLog: true);
                             }
+                            if (line.Contains("ERROR"))
+                            {
+                                ErrorInExecutingCmd = true;
+                                CurrentErrStatus = false;
+                                IsLastErrorCleared |= false;
+                            }
+                            if (!CurrentErrStatus)
+                                WriteToLogFile(line, isForAuditLog: true);
                         }
 
                         // Process data received from remote SSH terminal in this session

@@ -14,7 +14,7 @@ wifiFlooding:
 latencyLoopback:
   commandToRun: echo Allspark | sudo -S /home/allspark/serviceApps/loopback.sh
 latencyInjector:
-  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; sleep 0.1; echo Allspark | sudo -S export DISPLAY=:1; echo Allspark | sudo -S julia --project ./counter_injector.jl /dev/video1 -s 1 > /dev/null &
+  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; sleep 0.2; export DISPLAY=:1; julia --project ./counter_injector.jl /dev/video1 -s 1 &
 latencyAnalyzer:
   maxFrameLatency: 3
-  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; sleep 0.1; echo Allspark | sudo -S julia --project ./counters_analyzer.jl /dev/video0 -s 1
+  commandToRun: cd /home/allspark/Prime/Prime-master/LatencyTester.jl; sleep 0.2; julia --project ./counters_analyzer.jl /dev/video0 -s 1

@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleSerialConnect", "Con
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YamlParser", "YamlParser\YamlParser.csproj", "{F2EEC1DC-714E-4269-8213-57220F3FF3F3}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "RHM.Setup", "RHM.Setup\RHM.Setup.vdproj", "{8BC96E7F-D1E6-4F36-871E-CB68B2CE7AE0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,10 +51,6 @@ Global
 		{F2EEC1DC-714E-4269-8213-57220F3FF3F3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F2EEC1DC-714E-4269-8213-57220F3FF3F3}.Release|x86.ActiveCfg = Release|Any CPU
 		{F2EEC1DC-714E-4269-8213-57220F3FF3F3}.Release|x86.Build.0 = Release|Any CPU
-		{8BC96E7F-D1E6-4F36-871E-CB68B2CE7AE0}.Debug|Any CPU.ActiveCfg = Debug
-		{8BC96E7F-D1E6-4F36-871E-CB68B2CE7AE0}.Debug|x86.ActiveCfg = Debug
-		{8BC96E7F-D1E6-4F36-871E-CB68B2CE7AE0}.Release|Any CPU.ActiveCfg = Release
-		{8BC96E7F-D1E6-4F36-871E-CB68B2CE7AE0}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

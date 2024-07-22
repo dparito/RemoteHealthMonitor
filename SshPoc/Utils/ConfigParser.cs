@@ -12,7 +12,8 @@ namespace SshPoc
 {
     public class ConfigParser
     {
-        private string _filepath = @"test_limits_config.yaml";
+        //private string _filepath = @"test_limits_config.yaml";
+        private string _filepath = @"C:\Users\SN Test 2\source\repos\RemoteHealthMonitor\SshPoc\Utils\test_limits_config.yaml";
 
         public ConfigParser()
         {

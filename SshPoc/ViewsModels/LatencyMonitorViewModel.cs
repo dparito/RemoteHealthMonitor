@@ -57,6 +57,12 @@ namespace SshPoc
 
         public LatencyMonitorViewModel()
         {
+            //Debug.Listeners.Add(new TextWriterTraceListener("c:\\temp\\test.txt"));
+            //var listener = new TextWriterTraceListener("c:\\temp\\test.log");
+            //Debug.
+            //Debug.AutoFlush = true;
+            //Debug.WriteLine("test");
+
             // Configuration
             _configParser = new ConfigParser();
             AllsparkUsername = "allspark";
@@ -940,7 +946,7 @@ namespace SshPoc
         {
             if (RunStopAnalyzerContent == "Run Counter Analyzer")
             {
-                RunStopAnalyzerContent = "Stop Counter Analyzer";
+                //RunStopAnalyzerContent = "Stop Counter Analyzer";
                 if (LatencySessionOnJetson != null && LatencySessionOnJetson.GetConnectionStatus())
                 {
                     try
@@ -956,18 +962,26 @@ namespace SshPoc
                         LatencySessionOnJetson.IsRecording = true;
                         while (LatencySessionOnJetson.IsRecording)
                         {
-                            //LatencySessionOnJetson.StartRecording($"cd /home/allspark/Prime/Prime-master/LatencyTester.jl", SshSessionModel.TestType.LatencyOnJetson);
+                            //LatencySessionOnJetson.RunCommand($"julia --project -e 'import Pkg; Pkg.instantiate()'");
+                            //Thread.Sleep(1000);
+                            //LatencySessionOnJetson.RunCommand($"julia --project -e 'import Pkg; Pkg.precompile()'");
                             //Thread.Sleep(1000);
                             LatencySessionOnJetson.StartRecording(_configParser.TestLimits.LatencyAnalyzer.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
                             Thread.Sleep(100);
                             Thread.CurrentThread.IsBackground = true;
                         }
+                        if (LatencySessionOnJetson.ErrorInExecutingCmd)
+                        {
+                            throw new Exception("Error in executing Command");
+                        }
+                        RunStopAnalyzerContent = "Stop Counter Analyzer";
                     }
                     catch (Exception e)
                     {
                         MessageBox.Show(e.Message);
                         Debug.WriteLine(e.Message);
                         LatencySessionOnJetson.IsRecording = false;
+                        LatencySessionOnJetson.StopRecording();
                     }
                 }
                 else
@@ -984,7 +998,7 @@ namespace SshPoc
         {
             if (RunStopInjectorContent == "Run Counter Injector")
             {
-                RunStopInjectorContent = "Stop Counter Injector";
+                //RunStopInjectorContent = "Stop Counter Injector";
                 if (LatencySessionOnJetson != null && LatencySessionOnJetson.GetConnectionStatus())
                 {
                     try
@@ -1003,12 +1017,18 @@ namespace SshPoc
                             LatencySessionOnJetson.StartRecording(_configParser.TestLimits.LatencyInjector.CommandToRun, SshSessionModel.TestType.LatencyOnJetson);
                             Thread.Sleep(10000);
                         }
+                        if (LatencySessionOnJetson.ErrorInExecutingCmd)
+                        {
+                            throw new Exception("Error in executing Command");
+                        }
+                        RunStopInjectorContent = "Stop Counter Injector";
                     }
                     catch (Exception e)
                     {
                         MessageBox.Show(e.Message);
                         Debug.WriteLine(e.Message);
                         LatencySessionOnJetson.IsRecording = false;
+                        LatencySessionOnJetson.StopRecording();
                     }
                 }
                 else
@@ -1017,7 +1037,7 @@ namespace SshPoc
             else
             {
                 RunStopInjectorContent = "Run Counter Injector";
-                LatencySessionOnJetson.StopRecording();
+                LatencySessionOnJetson?.StopRecording();
             }
         }
 
@@ -1025,7 +1045,7 @@ namespace SshPoc
         {
             if (RunStopLoopbackContent == "Run Loopback")
             {
-                RunStopLoopbackContent = "Stop Loopback";
+                //RunStopLoopbackContent = "Stop Loopback";
                 if (LatencySessionOnAllspark != null && LatencySessionOnAllspark.GetConnectionStatus())
                 {
                     try
@@ -1047,6 +1067,7 @@ namespace SshPoc
                             LatencySessionOnAllspark.StartRecording(_configParser.TestLimits.LatencyLoopback.CommandToRun, SshSessionModel.TestType.LatencyOnAllspark);
                             Thread.Sleep(1000);
                         }
+                        RunStopLoopbackContent = "Stop Loopback";
                     }
                     catch (Exception e)
                     {
